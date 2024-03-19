@@ -1,0 +1,29 @@
+l a = "my program variables are nicely scoped"
+
+l b = "hello world"
+
+l c = 3 + 3
+
+l d = round(rand() * 12)
+
+f print5(){
+  for ( l i = 0; i < 5; i++){
+   l b2 = round(rand() * 5)
+   if (d > c){
+    print b
+   }
+   print(b2)
+  } 
+}
+timer(print5, 500)
+print5()
+l today = new Day()
+l time = today.time()
+print("hey, world!", d, b, c, a, time, today.getFullDate(), PI())
+
+
+
+
+
+
+

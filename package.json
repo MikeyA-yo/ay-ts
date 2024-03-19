@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "@types/acorn": "^6.0.0",
+    "@types/node": "^20.11.17",
+    "acorn": "^8.11.3",
+    "typescript": "^5.3.3"
+  },
+  "name": "ay",
+  "version": "1.0.0",
+  "main": "./new.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin":{
+    "ay" : "./new.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
