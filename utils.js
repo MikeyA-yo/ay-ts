@@ -51,8 +51,8 @@ function write(path, data){
 function appendFile(path, data){
   return fs.appendFileSync(path, data);
 }
-function dirName(p){
-   return path.dirname(p);
+function dirname(){
+   return process.cwd();
 }
 module.exports = {
     print,
@@ -62,5 +62,5 @@ module.exports = {
     read,
     write,
     appendFile,
-    dirName
+    dirname
 }

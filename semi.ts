@@ -66,11 +66,8 @@ function generateCode(program:any){
     return code;
 }
 const math = `const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n`;
-const utils = `const {print, timer, Day, interval, read, write, appendFile, dirName} = require('./utils')\n`
-const dirname =`function dirname(){
-    return dirName('/${programName}')
-}`
-const exec= ` ${math} ${utils} ${dirname} try {\n${generateCode(program)}}catch(e){\n console.error(e.message);\n}`
+const utils = `const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n`
+const exec= ` ${math} ${utils}  try {\n${generateCode(program)}}catch(e){\n console.error(e.message);\n}`
 fs.writeFileSync(out, exec );
 require(out);
 
