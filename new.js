@@ -66,7 +66,8 @@ function generateCode(program) {
 }
 var math = "const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n";
 var utils = "const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n";
-var exec = " ".concat(math, " ").concat(utils, "  try {\n").concat(generateCode(program), "}catch(e){\n console.error(e.message);\n}");
+var AY = "const {AY} = require(__dirname +'/objects/AY');\n";
+var exec = " ".concat(math, " ").concat(utils, " ").concat(AY, "  try {\n").concat(generateCode(program), "}catch(e){\n console.error(e.message);\n}");
 fs.writeFileSync(out, exec);
 require(out);
 // if(!values[0].includes('(')){

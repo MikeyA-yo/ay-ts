@@ -19,7 +19,7 @@ timer(print5, 500)
 print5()
 l today = new Day()
 l time = today.time()
-print("hey, world!", d, b, c, a, time, today.getFullDate(), PI())
+print("hey, world!", d, b, c, a, time, today.getFullDate(), PI(), AY.type(AY.isAy))
 
 
 
