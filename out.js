@@ -7,14 +7,14 @@ let b = "hello world" ;
 let c = 3 + 3 ; 
 let d = round(rand() * 12) ; 
 function print5(){ ; 
- for ( let i = 0; i < 5; i++){  
- let b2 = round(rand() * 5) ; 
- if (d > c){ ; 
- console.log(b)   ; 
- }  
- print(b2) ; 
- }  
-}  
+for ( let i = 0; i < 5; i++){ 
+let b2 = round(rand() * 5) ; 
+if (d > c){ ; 
+console.log(b)   ; 
+} 
+print(b2) ; 
+} 
+} 
 timer(print5, 500) ; 
 print5() ; 
 let today = new Day() ; 

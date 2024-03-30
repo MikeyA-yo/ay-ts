@@ -13,6 +13,17 @@ function parse(codes:any): string[]{
 function tokenize(code:string): string[]{
    return code.split(/\s+/);
 }
+//this function is peak
+function parseStr(inputString:string) {
+    const regex = /(["'`])(.*?)\1|\S+/g;
+    const matches = inputString.match(regex);
+
+    if (matches) {
+        return matches;
+    } else {
+        return [];
+    }
+}
 // this function breaks a quote statement apart
 function parseStatement(statement): string[] {
     const regex =/"([^"]+)"|(\w+)|([=\[\]\(\){}÷*+\-])/g ; // Matches either a quoted string or a word /("[^"]+"|\w+)/g
@@ -31,7 +42,7 @@ function generateCode(program:any){
     
     newLines.forEach(el => {
         el.includes('}') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el += ';' ;
-        const values = tokenize(el);
+        const values = parseStr(el);
         values[values.length] = '\n';
         for(let i = 0; i < values.length; i++){
             if(values[i] == 'l'){
