@@ -1,12 +1,16 @@
 loop of 100000 time
 node - 54.952
 py - 26.721
-bun - 26.475
+bun - 25.699
 ay - 31.488
-ay-bun - 25.961
+go(with build) - 26.272s
+ay-bun - 25.459
+C - 22.572
 loop of 1000000 time
 py - 4m 28.107
+bun - 4m 10.512
 node - 9m 8. 123
-go - 4m 35.121
+go - 4m 27.954
 ay - 5m 8.446
-ay-bun - 4m 15.455
+ay-bun - 4m 8.162
+C - 3m 57.803s
