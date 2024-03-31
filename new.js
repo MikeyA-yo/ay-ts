@@ -15,6 +15,44 @@ function tokenize(code) {
     return code.split(/\s+/);
 }
 //this function is peak
+function parser(inputString) {
+    // Separate the input string into segments
+    var segments = inputString.match(/(["'`].*?["'`])|\S+/g);
+    if (!segments)
+        return [];
+    var result = [];
+    for (var _i = 0, segments_1 = segments; _i < segments_1.length; _i++) {
+        var segment = segments_1[_i];
+        if (segment.startsWith('"') || segment.startsWith("'") || segment.startsWith("`")) {
+            // Quoted strings
+            result.push(segment);
+        }
+        else {
+            // Split by parentheses, square brackets, braces, and operators
+            var tokens = segment.split(/([()\[\]{}])/).filter(function (token) { return token.trim() !== ''; });
+            // Combine adjacent parentheses, square brackets, or braces
+            var combinedToken = '';
+            for (var _a = 0, tokens_1 = tokens; _a < tokens_1.length; _a++) {
+                var token = tokens_1[_a];
+                if (token === '(' || token === '[' || token === '{' || token === ')' || token === ']' || token === '}') {
+                    if (combinedToken !== '') {
+                        result.push(combinedToken);
+                        combinedToken = '';
+                    }
+                    result.push(token);
+                }
+                else {
+                    combinedToken += token;
+                }
+            }
+            // Push any remaining combined token
+            if (combinedToken !== '') {
+                result.push(combinedToken);
+            }
+        }
+    }
+    return result;
+}
 function parseStr(inputString) {
     var regex = /(["'`])(.*?)\1|\S+/g;
     var matches = inputString.match(regex);
