@@ -15,8 +15,13 @@
   "bin":{
     "ay" : "./new.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "AY",
+    "JIT compiler",
+    "nodejs",
+    "Typescript"
+  ],
+  "author": "Oluwatola Ayomide, CHO inc",
   "license": "ISC",
-  "description": ""
+  "description": "A just in time compiler, for my AY language still experimental tho"
 }
