@@ -3,26 +3,24 @@
  const {AY} = require(__dirname +'/objects/AY');
   try {
 let a = "my program variables are nicely scoped" ; 
-console.log(a)   ; 
 let b = "hello world" ; 
 let c = 3 + 3 ; 
 let d = round(rand() * 12) ; 
 function print5(){ ; 
-for ( let i = 0; i < 5; i++){ 
+for ( let i = 0; i < 5; i++ ) { 
 let b2 = round(rand() * 5) ; 
-if (d > c){ ; 
+if ( d > c ) { ; 
 console.log(b)   ; 
-}else{ 
+} 
 print(b2) ; 
 } 
 } 
-} 
+timer(print5, 500) ; 
 print5() ; 
 let today = new Day() ; 
 let time = today.time() ; 
-let data = read('semi.js') ; 
-write('new.js', data) ; 
-print(`${today.getFullDate()} - ${time}`) 
+print("hey, world!", d, b, c, a, time, today.getFullDate(), PI(), AY.type(AY.isAy), AY.argv[1]) ; 
+; 
 }catch(e){
  console.error(e.message);
 }

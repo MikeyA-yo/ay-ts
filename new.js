@@ -81,6 +81,9 @@ function generateCode(program) {
     newLines.forEach(function (el) {
         el.includes('}') ? el += '' : el.includes(';') ? el += '' : el.includes('}') ? el += '' : el += ';';
         var values = parseStr(el);
+        if (el.includes('for (') || el.includes('for(') || el.includes('if(') || el.includes('if (')) {
+            values = parser(el);
+        }
         values[values.length] = '\n';
         for (var i = 0; i < values.length; i++) {
             if (values[i] == 'l') {

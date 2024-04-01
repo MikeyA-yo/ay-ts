@@ -81,7 +81,10 @@ function generateCode(program:any){
     
     newLines.forEach(el => {
         el.includes('}') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el += ';' ;
-        const values = parseStr(el);
+        let values = parseStr(el);
+        if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')){
+            values = parser(el)
+        }
         values[values.length] = '\n';
         for(let i = 0; i < values.length; i++){
             if(values[i] == 'l'){

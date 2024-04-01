@@ -7,7 +7,7 @@ l c = 3 + 3
 l d = round(rand() * 12)
 
 f print5(){
-  for ( l i = 0; i < 5; i++){
+  for (l i = 0; i < 5; i++){
    l b2 = round(rand() * 5)
    if (d > c){
     print b
