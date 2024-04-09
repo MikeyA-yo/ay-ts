@@ -15,7 +15,7 @@ f print5(){
    print(b2)
   } 
 }
-timer(print5, 500)
+// timer(print5, 0)
 print5()
 l today = new Day()
 l time = today.time()

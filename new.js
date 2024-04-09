@@ -79,7 +79,7 @@ function generateCode(program) {
         newLines[0] = '';
     }
     newLines.forEach(function (el) {
-        el.includes('}') ? el += '' : el.includes(';') ? el += '' : el.includes('}') ? el += '' : el += ';';
+        el.includes('{') ? el += '' : el.includes(';') ? el += '' : el.includes('}') ? el += '' : el += ';';
         var values = parseStr(el);
         if (el.includes('for (') || el.includes('for(') || el.includes('if(') || el.includes('if (')) {
             values = parser(el);

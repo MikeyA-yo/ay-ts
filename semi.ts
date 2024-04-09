@@ -80,7 +80,7 @@ function generateCode(program:any){
      }
     
     newLines.forEach(el => {
-        el.includes('}') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el += ';' ;
+        el.includes('{') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el += ';' ;
         let values = parseStr(el);
         if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')){
             values = parser(el)
