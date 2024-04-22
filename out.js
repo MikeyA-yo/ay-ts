@@ -15,11 +15,11 @@ console.log(b)   ;
 print(b2) ; 
 } 
 } 
-// timer(print5, 0) ; 
+// timer(print5, 0) 
 print5() ; 
 let today = new Day() ; 
 let time = today.time() ; 
-print("hey, world!", d, b, c, a, time, today.getFullDate(), PI(), AY.type(AY.isAy), AY.argv[1]) ; 
+print("hey, world!", d, b, c, a, time, today.getFullDate(), PI(), AY.type(AY.isAy), AY.argv[1]) 
 ; 
 }catch(e){
  console.error(e.message);
