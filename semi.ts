@@ -13,8 +13,23 @@ function parse(codes:any): string[]{
 function tokenize(code:string): string[]{
    return code.split(/\s+/);
 }
+function imp(values, val){
+    // to do fix this
+    let impStatementLength = values.length;
+    let importForV = values[1];
+    let importLocation = values[impStatementLength - 3]
+    let impLength = importLocation.length;
+    importLocation = importLocation.slice(1,(impLength - 1))
+    let ayImport = fs.readFileSync(importLocation, 'utf-8');
+    for(let i = 0; i < impStatementLength; i++){
+        values[i] = '';
+    }
+    let jsTransformed = generateCode(ayImport);
+    val = jsTransformed;
+    return val
+}
 //this function is peak
-function parser(inputString:string) {
+function parser(inputString:string): string[] | any {
     // Separate the input string into segments
     const segments = inputString.match(/(["'`].*?["'`])|\S+/g);
 
@@ -53,7 +68,7 @@ function parser(inputString:string) {
 
     return result;
 }
-function parseStr(inputString:string) {
+function parseStr(inputString:string): string[] | any {
     const regex = /(["'`])(.*?)\1|\S+/g;
     const matches = inputString.match(regex);
 
@@ -81,14 +96,15 @@ function generateCode(program:any){
     
     newLines.forEach(el => {
         el.includes('{') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el.includes(',') ? el += '' : el += ';' ;
-        let values = parseStr(el);
+        let values: RegExpMatchArray  | string[] = parseStr(el);
         if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')){
             values = parser(el)
         }
         values[values.length] = '\n';
+        let container:any = []
         for(let i = 0; i < values.length; i++){
             if(values[i] == 'l'){
-                values[i] = 'let'
+                values[i] = 'let';
             }
             if(values[i] == 'print'){
                 values[i] = `console.log(${values[i + 1]})`
@@ -97,24 +113,41 @@ function generateCode(program:any){
             if ( values[i] == 'f'){
                 values[i] = 'function'
             }
-        }
+            
+            if (values[i] == 'imp@') {
+                // let impe = imp(values, values[i]);
+                // values[i] = impe
+                let impStatementLength = values.length;
+                let importForV = values[i + 1];
+                let importLocation = values[impStatementLength - 3]
+                let impLength = importLocation.length;
+                importLocation = importLocation.slice(1,(impLength - 1))
+                let ayImport = fs.readFileSync(importLocation, 'utf-8');
+              //  console.log(values[i],values[impStatementLength - 3])
+                values[i] = '';
+                values[impStatementLength - 3] = '';
+         
+              code += generateCode(ayImport);
+            }
+        } 
+        code += values.join(" ")
         // switch case will only be used for error handling
-        switch(values[0]){
-            case 'l':
-                values[0] = 'let';
+        // switch(values[0]){
+        //     case 'l':
+        //         values[0] = 'let';
                 
-                break;
-            case 'print':
-                values[0] = `console.log(${values[1]});`;
-                values[1] = ' '
-                break; 
-            case 'f':
-                values[0] = `function`;
-                break;    
-            default:
-                values[0] = values[0];    
-        }
-        code += values.join(" ");
+        //         break;
+        //     case 'print':
+        //         values[0] = `console.log(${values[1]});`;
+        //         values[1] = ' '
+        //         break; 
+        //     case 'f':
+        //         values[0] = `function`;
+        //         break;    
+        //     default:
+        //         values[0] = values[0];    
+        // }
+        // code += values.join(" ");
     })
     return code;
 }
@@ -122,6 +155,7 @@ const math = `const {rand, round, PI, floor, exp, degToRad, radToDeg} = require(
 const utils = `const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n`
 const AY = `const {AY} = require(__dirname +'/objects/AY');\n`;
 const exec= ` ${math} ${utils} ${AY}  try {\n${generateCode(program)}}catch(e){\n console.error(e.message);\n}`
+module.exports = {program}
 fs.writeFileSync(out, exec );
 require(out);
 

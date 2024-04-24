@@ -14,6 +14,21 @@ function parse(codes) {
 function tokenize(code) {
     return code.split(/\s+/);
 }
+function imp(values, val) {
+    // to do fix this
+    var impStatementLength = values.length;
+    var importForV = values[1];
+    var importLocation = values[impStatementLength - 3];
+    var impLength = importLocation.length;
+    importLocation = importLocation.slice(1, (impLength - 1));
+    var ayImport = fs.readFileSync(importLocation, 'utf-8');
+    for (var i = 0; i < impStatementLength; i++) {
+        values[i] = '';
+    }
+    var jsTransformed = generateCode(ayImport);
+    val = jsTransformed;
+    return val;
+}
 //this function is peak
 function parser(inputString) {
     // Separate the input string into segments
@@ -85,6 +100,7 @@ function generateCode(program) {
             values = parser(el);
         }
         values[values.length] = '\n';
+        var container = [];
         for (var i = 0; i < values.length; i++) {
             if (values[i] == 'l') {
                 values[i] = 'let';
@@ -96,23 +112,38 @@ function generateCode(program) {
             if (values[i] == 'f') {
                 values[i] = 'function';
             }
-        }
-        // switch case will only be used for error handling
-        switch (values[0]) {
-            case 'l':
-                values[0] = 'let';
-                break;
-            case 'print':
-                values[0] = "console.log(".concat(values[1], ");");
-                values[1] = ' ';
-                break;
-            case 'f':
-                values[0] = "function";
-                break;
-            default:
-                values[0] = values[0];
+            if (values[i] == 'imp@') {
+                // let impe = imp(values, values[i]);
+                // values[i] = impe
+                var impStatementLength = values.length;
+                var importForV = values[i + 1];
+                var importLocation = values[impStatementLength - 3];
+                var impLength = importLocation.length;
+                importLocation = importLocation.slice(1, (impLength - 1));
+                var ayImport = fs.readFileSync(importLocation, 'utf-8');
+                //  console.log(values[i],values[impStatementLength - 3])
+                values[i] = '';
+                values[impStatementLength - 3] = '';
+                code += generateCode(ayImport);
+            }
         }
         code += values.join(" ");
+        // switch case will only be used for error handling
+        // switch(values[0]){
+        //     case 'l':
+        //         values[0] = 'let';
+        //         break;
+        //     case 'print':
+        //         values[0] = `console.log(${values[1]});`;
+        //         values[1] = ' '
+        //         break; 
+        //     case 'f':
+        //         values[0] = `function`;
+        //         break;    
+        //     default:
+        //         values[0] = values[0];    
+        // }
+        // code += values.join(" ");
     });
     return code;
 }
@@ -120,6 +151,7 @@ var math = "const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('.
 var utils = "const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n";
 var AY = "const {AY} = require(__dirname +'/objects/AY');\n";
 var exec = " ".concat(math, " ").concat(utils, " ").concat(AY, "  try {\n").concat(generateCode(program), "}catch(e){\n console.error(e.message);\n}");
+module.exports = { program: program };
 fs.writeFileSync(out, exec);
 require(out);
 // if(!values[0].includes('(')){

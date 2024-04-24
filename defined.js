@@ -6,6 +6,7 @@ let defined = [
     "for",
     "if",
     "else",
+    "break",
     "do",
     "AY",
     "+",
