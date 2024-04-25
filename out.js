@@ -25,13 +25,15 @@ let time = today.time() ;
 print(`${today.getFullDate()} - ${time}`) 
 console.log('there is a bug')   ; 
 console.log('wtf is happening')   ; 
-function bugs(){ 
+ let ay = 'Peak' ; 
+ function bugs ( ) { 
 console.log('yes bugs exists')   ; 
 } 
-let data = read('semi.js'); 
-  ; 
-bugs() ; 
 ; 
+    ; 
+//print data ; 
+bugs() ; 
+console.log(ay)   ; 
 }catch(e){
  console.error(e.message);
 }

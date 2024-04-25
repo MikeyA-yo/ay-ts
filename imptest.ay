@@ -1,5 +1,6 @@
 print 'there is a bug'
 print 'wtf is happening'
-f bugs(){
+exp@ l ay = 'Peak'
+exp@ f bugs(){
     print 'yes bugs exists' 
 }

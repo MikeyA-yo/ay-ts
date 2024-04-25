@@ -84,6 +84,7 @@ function parseStatement(statement): string[] {
     const matches = statement.match(regex);
     return matches;
   }
+  let exporters:string | any = [];  
 function generateCode(program:any){
      code = "";
      let lines = parse(program)
@@ -93,11 +94,10 @@ function generateCode(program:any){
      if(newLines[0].includes('#')){
         newLines[0] = ''
      }
-    
     newLines.forEach(el => {
-        el.includes('{') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el.includes(',') ? el += '' : el += ';' ;
+        el.includes('{') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el.includes(',') ? el += '' : el += ' ;' ;
         let values: RegExpMatchArray  | string[] = parseStr(el);
-        if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')){
+        if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')|| el.includes('exp@ f')){
             values = parser(el)
         }
         values[values.length] = '\n';
@@ -113,21 +113,36 @@ function generateCode(program:any){
             if ( values[i] == 'f'){
                 values[i] = 'function'
             }
+            if (values[i] == 'exp@'){
+                exporters.push(values[i + 2]) // exported variable name to list of exported in a file
+                values[i] = ''
+            }
             
             if (values[i] == 'imp@') {
                 // let impe = imp(values, values[i]);
                 // values[i] = impe
                 let impStatementLength = values.length;
-                let importForV = values[i + 1];
-                let importLocation = values[impStatementLength - 3]
+                // import for variable
+                let importForV = values[i + 1].slice(1,-1);
+                let endMark = impStatementLength - 3
+                // import location
+                let importLocation = values[endMark]
                 let impLength = importLocation.length;
                 importLocation = importLocation.slice(1,(impLength - 1))
-                let ayImport = fs.readFileSync(importLocation, 'utf-8');
-              //  console.log(values[i],values[impStatementLength - 3])
+                let ayImport = fs.readFileSync(process.cwd()+importLocation, 'utf-8');
+                let dFr = values[2]
+              //  console.log(importForV,importLocation,values)
                 values[i] = '';
-                values[impStatementLength - 3] = '';
-         
-              code += generateCode(ayImport);
+                values[i + 1] = ''
+                values[2] = ''
+                values[endMark] = '';
+               if( importForV == importLocation){
+                   code += generateCode(ayImport);
+               }else{
+                  //to do actually make sure the file isn't loaded and executed
+                code += generateCode(ayImport);
+                console.log(`Variables defined: ${exporters}`)
+               }
             }
         } 
         code += values.join(" ")
@@ -179,35 +194,3 @@ interface VariableDeclarationNode extends ASTNode {
     kind: "PrintStatement";
     expression: ExpressionNode;
   }
-// if(!values[0].includes('(')){
-//     values[0] = `console.log(${values[1]});`;
-//     values[1] = ''
-//    }else{
-//     values[0]=values[0]
-//    }
-// function parseExpression(tokens: string[]): ExpressionNode[] {
-//     if (tokens[0] === '"' && tokens[tokens.length - 1] === '"') {
-//       return [{ kind: "StringLiteral", value: tokens.slice(1, -1).join("") }];
-//     }
-//     throw new Error("Unsupported expression");
-//   }
-//  if (values[0] == 'assign'){
- //   values[0] = 'let';
-//}
-// function parse(tokens: string[]): ASTNode[] {
-//     const ast: ASTNode[] = [];
-//     for (let i = 0; i < tokens.length; i++) {
-//       const token = tokens[i];
-//       if (token === "let") {
-//         const identifier = tokens[++i];
-//         const expression = parseExpression(tokens.slice(i + 1));
-//         ast.push({ kind: "VariableDeclaration", identifier, expression });
-//         i += expression.length; // Skip parsed expression tokens
-//       } else if (token === "print") {
-//         const expression = parseExpression(tokens.slice(i + 1));
-//         ast.push({ kind: "PrintStatement", expression });
-//         i += expression.length; // Skip parsed expression tokens
-//       }
-//     }
-//     return ast;
-//   }
