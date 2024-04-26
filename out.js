@@ -23,14 +23,7 @@ let time = today.time() ;
 //l data = read('semi.js') ; 
 //write('new.js', data) 
 print(`${today.getFullDate()} - ${time}`) 
-console.log('there is a bug')   ; 
-console.log('wtf is happening')   ; 
- let ay = 'Peak' ; 
- function bugs ( ) { 
-console.log('yes bugs exists')   ; 
-} 
-; 
-    ; 
+const {bugs} = require("./out2.js")    ; 
 //print data ; 
 bugs() ; 
 console.log(ay)   ; 

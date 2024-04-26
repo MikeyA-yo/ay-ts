@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 const out = __dirname+'/out.js';
 const programName = process.argv[2];
 const program = fs.readFileSync(programName, 'utf-8');
-let code;
+
 
 // this function breaks the whole program into lines
 function parse(codes:any): string[]{
@@ -84,9 +84,9 @@ function parseStatement(statement): string[] {
     const matches = statement.match(regex);
     return matches;
   }
-  let exporters:string | any = [];  
+  let exporters:string[] = [];  
 function generateCode(program:any){
-     code = "";
+     let code = "";
      let lines = parse(program)
      let newLines =lines.filter(line => {
        return line !== '\r'
@@ -138,10 +138,20 @@ function generateCode(program:any){
                 values[endMark] = '';
                if( importForV == importLocation){
                    code += generateCode(ayImport);
-               }else{
+               }else {
                   //to do actually make sure the file isn't loaded and executed
-                code += generateCode(ayImport);
-                console.log(`Variables defined: ${exporters}`)
+                let tempCode = generateCode(ayImport);
+                tempCode += `module.exports = {${exporters}}\n`
+                const math = `const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n`;
+                const utils = `const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n`
+                const AY = `const {AY} = require(__dirname +'/objects/AY');\n`;
+                const exec= ` ${math} ${utils} ${AY}  try {\n${tempCode}}catch(e){\n console.error(e.message);\n}`
+                fs.writeFileSync('out2.js', exec)
+                code += `const {${importForV}} = require("./out2.js")`
+                if(!exporters.includes(importForV)){
+                    console.log(exporters)
+                    console.log('No exports found')
+                   }
                }
             }
         } 

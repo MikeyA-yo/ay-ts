@@ -5,7 +5,6 @@ var fs = require("node:fs");
 var out = __dirname + '/out.js';
 var programName = process.argv[2];
 var program = fs.readFileSync(programName, 'utf-8');
-var code;
 // this function breaks the whole program into lines
 function parse(codes) {
     return codes.split('\n');
@@ -86,7 +85,7 @@ function parseStatement(statement) {
 }
 var exporters = [];
 function generateCode(program) {
-    code = "";
+    var code = "";
     var lines = parse(program);
     var newLines = lines.filter(function (line) {
         return line !== '\r';
@@ -140,8 +139,18 @@ function generateCode(program) {
                 }
                 else {
                     //to do actually make sure the file isn't loaded and executed
-                    code += generateCode(ayImport);
-                    console.log("Variables defined: ".concat(exporters));
+                    var tempCode = generateCode(ayImport);
+                    tempCode += "module.exports = {".concat(exporters, "}\n");
+                    var math_1 = "const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n";
+                    var utils_1 = "const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n";
+                    var AY_1 = "const {AY} = require(__dirname +'/objects/AY');\n";
+                    var exec_1 = " ".concat(math_1, " ").concat(utils_1, " ").concat(AY_1, "  try {\n").concat(tempCode, "}catch(e){\n console.error(e.message);\n}");
+                    fs.writeFileSync('out2.js', exec_1);
+                    code += "const {".concat(importForV, "} = require(\"./out2.js\")");
+                    if (!exporters.includes(importForV)) {
+                        console.log(exporters);
+                        console.log('No exports found');
+                    }
                 }
             }
         }
