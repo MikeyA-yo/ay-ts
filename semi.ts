@@ -146,8 +146,9 @@ function generateCode(program:any){
                 const utils = `const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n`
                 const AY = `const {AY} = require(__dirname +'/objects/AY');\n`;
                 const exec= ` ${math} ${utils} ${AY}  try {\n${tempCode}}catch(e){\n console.error(e.message);\n}`
-                fs.writeFileSync('out2.js', exec)
-                code += `const {${importForV}} = require("./out2.js")`
+                const out2 = __dirname + '/out2.js'
+                fs.writeFileSync(out2, exec)
+                code += `const {${importForV}} = require("./out2")`
                 if(!exporters.includes(importForV)){
                     console.log(exporters)
                     console.log('No exports found')
@@ -183,7 +184,6 @@ const exec= ` ${math} ${utils} ${AY}  try {\n${generateCode(program)}}catch(e){\
 module.exports = {program}
 fs.writeFileSync(out, exec );
 require(out);
-
 interface ASTNode{
     kind:string;
 }
