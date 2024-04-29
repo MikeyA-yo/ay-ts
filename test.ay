@@ -23,5 +23,4 @@ l time = today.time()
 //write('new.js', data)
 print(`${today.getFullDate()} - ${time}`)
 imp@ 'bugs' from '/imptest.ay'
-//print data
 bugs()

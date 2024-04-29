@@ -2,12 +2,29 @@
  const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')
  const {AY} = require(__dirname +'/objects/AY');
   try {
-for ( let i = 0; i < 20; i++ ) { 
-i % 3 == 0 ? console.log('fizz')   : i % 5 == 0 ? console.log('buzz')   : console.log(i)   ; 
+let a = "my program variables are nicely scoped" ; 
+console.log(a)   ; 
+let b = "hello world" ; 
+let c = 3 + 3 ; 
+let d = round(rand() * 12) ; 
+function print5(){ 
+for ( let i = 0; i < 5; i++ ) { 
+let b2 = round(rand() * 5) ; 
+if ( d > c ) { 
+console.log(b)   ; 
+}else{ 
+print(b2) ; 
 } 
-print(dirname(), AY.type(AY), AY.type(dirname), AY.os, AY.argv[1]) 
-const {ay} = require("./out2")    ; 
-console.log(ay)   ; 
+} 
+} 
+print5() ; 
+let today = new Day() ; 
+let time = today.time() ; 
+//l data = read('semi.js') ; 
+//write('new.js', data) 
+print(`${today.getFullDate()} - ${time}`) 
+const {bugs} = require("./out2")    ; 
+bugs() ; 
 }catch(e){
  console.error(e.message);
 }
