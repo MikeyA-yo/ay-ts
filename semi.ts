@@ -153,7 +153,7 @@ function generateCode(program:any){
                }
                 if(!exporters.includes(importForV)){
                     console.log('exports: ',exporters)
-                    console.log('No exports found')
+                    console.log('No exports found ', importForV)
                     process.exit(1)
                    }
                }
