@@ -141,16 +141,19 @@ function generateCode(program) {
                     //to do actually make sure the file isn't loaded and executed
                     var tempCode = generateCode(ayImport);
                     tempCode += "module.exports = {".concat(exporters, "}\n");
-                    var math_1 = "const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n";
-                    var utils_1 = "const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n";
-                    var AY_1 = "const {AY} = require(__dirname +'/objects/AY');\n";
-                    var exec_1 = " ".concat(math_1, " ").concat(utils_1, " ").concat(AY_1, "  try {\n").concat(tempCode, "}catch(e){\n console.error(e.message);\n}");
-                    var out2 = __dirname + '/out2.js';
-                    fs.writeFileSync(out2, exec_1);
-                    code += "const {".concat(importForV, "} = require(\"./out2\")");
+                    if (exporters.includes(importForV)) {
+                        var math_1 = "const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n";
+                        var utils_1 = "const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n";
+                        var AY_1 = "const {AY} = require(__dirname +'/objects/AY');\n";
+                        var exec_1 = " ".concat(math_1, " ").concat(utils_1, " ").concat(AY_1, "  try {\n").concat(tempCode, "}catch(e){\n console.error(e.message);\n}");
+                        var out2 = __dirname + '/out2.js';
+                        fs.writeFileSync(out2, exec_1);
+                        code += "const {".concat(importForV, "} = require(\"./out2\")");
+                    }
                     if (!exporters.includes(importForV)) {
-                        console.log(exporters);
+                        console.log('exports: ', exporters);
                         console.log('No exports found');
+                        process.exit(1);
                     }
                 }
             }

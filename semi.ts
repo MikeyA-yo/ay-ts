@@ -142,6 +142,7 @@ function generateCode(program:any){
                   //to do actually make sure the file isn't loaded and executed
                 let tempCode = generateCode(ayImport);
                 tempCode += `module.exports = {${exporters}}\n`
+               if(exporters.includes(importForV)){
                 const math = `const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')\n`;
                 const utils = `const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')\n`
                 const AY = `const {AY} = require(__dirname +'/objects/AY');\n`;
@@ -149,9 +150,11 @@ function generateCode(program:any){
                 const out2 = __dirname + '/out2.js'
                 fs.writeFileSync(out2, exec)
                 code += `const {${importForV}} = require("./out2")`
+               }
                 if(!exporters.includes(importForV)){
-                    console.log(exporters)
+                    console.log('exports: ',exporters)
                     console.log('No exports found')
+                    process.exit(1)
                    }
                }
             }
