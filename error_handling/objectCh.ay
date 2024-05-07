@@ -1,4 +1,66 @@
-l defined = {}
-f objectChecker(code){
+l defined = []
+f isQuoted(str){
+     if (str.length >= 2) {
+        // Check if the first and last characters are both quotation marks
+        if (str.charAt(0) == '"' && str.charAt((str.length - 1)) == '"') {
+            return true // String is quoted
+        } else if (str.charAt(0) === "'" && str.charAt((str.length - 1)) == "'") {
+            return true // String is quoted
+        }
+    }
+    return false // String is not quoted
+}
+f parseStr(inputString){
+    l regex = /(["'`])(.*?)\1|\S+/g
+    l matches = inputString.match(regex)
+
+    if (matches) {
+        return matches
+    } else {
+        return []
+    }
+}
+f parse(codes){
+    return codes.split('\n')
+} 
+ exp@ f objectChecker(code){
+     l lines  = parse(code)
+     l lineCount
+     lines.forEach(line =>{
+        l term = parseStr(line)
+        for ( l i = 0; i < term.length; i++ ){
+            if(!isQuoted(term[i]) && term[i].includes('.') ){
+              //first get number of '.' that it indexes into
+              l j
+              l numberOfObjectiveIndex
+              while( j < term[i].length){
+                 if( term[i][j] == '.') numberOfObjectiveIndex++
+                 j++
+              }
+              //use number of '.' to get every object property
+              if (numberOfObjectiveIndex == 1){
+                // object itself
+                  l obj = term[i].slice(0, (term[i].indexOf('.')))
+                  if (type(obj) != object) {
+                    print `${obj} is not an object\n at ${lineCount}`
+                    process.exit(1)
+                  }
+                  // prop
+                  l prop = term[i].slice((term[i].indexOf('.')))
+                  l arrayOfProps = []
+                  for ( l key in obj){
+                    arrayOfProps.push(key)
+                  }
+                  if(!arrayOfProps.includes(prop)){
+                    print `${prop} is not a property of ${obj}\n at ${lineCount}`
+                  }else{
+                    return true
+                  }
+              }
+              // to do handle multiple object cases
+            }
+        }
+     })
      
+        lineCount++
 }

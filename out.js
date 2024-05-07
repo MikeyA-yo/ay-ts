@@ -10,7 +10,7 @@ let d = round(rand() * 12) ;
 function print5(){ 
 for ( let i = 0; i < 5; i++ ) { 
 let b2 = round(rand() * 5) ; 
-if ( d > c ) { 
+if (d > c){ 
 console.log(b)   ; 
 }else{ 
 print(b2) ; 
@@ -23,8 +23,8 @@ let time = today.time() ;
 //l data = read('semi.js') ; 
 //write('new.js', data) 
 print(`${today.getFullDate()} - ${time}`) 
-const {bugs} = require("./out2")    ; 
-bugs() ; 
+const {ay} = require("./out2")    ; 
+ay.some ; 
 }catch(e){
  console.error(e.message);
 }

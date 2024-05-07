@@ -4,7 +4,7 @@ const out = __dirname+'/out.js';
 const programName = process.argv[2];
 const program = fs.readFileSync(programName, 'utf-8');
 
-
+const {objectChecker} = require('./error_handling/objectChcompiled')
 // this function breaks the whole program into lines
 function parse(codes:any): string[]{
     return codes.split('\n');
@@ -88,6 +88,7 @@ function parseStatement(statement): string[] {
 function generateCode(program:any){
      let code = "";
      let lines = parse(program)
+     
      let newLines =lines.filter(line => {
        return line !== '\r'
      })
@@ -97,7 +98,7 @@ function generateCode(program:any){
     newLines.forEach(el => {
         el.includes('{') ? el += '' : el.includes(';') ? el += '': el.includes('}') ? el += '' : el.includes(',') ? el += '' : el += ' ;' ;
         let values: RegExpMatchArray  | string[] = parseStr(el);
-        if(el.includes('for (') || el.includes('for(') || el.includes('if(') ||el.includes('if (')|| el.includes('exp@ f')){
+        if(el.includes('for (') || el.includes('for(') ||  el.includes('exp@ f')){
             values = parser(el)
         }
         values[values.length] = '\n';
@@ -185,6 +186,7 @@ const utils = `const {print, timer, Day, interval, read, write, appendFile, dirn
 const AY = `const {AY} = require(__dirname +'/objects/AY');\n`;
 const exec= ` ${math} ${utils} ${AY}  try {\n${generateCode(program)}}catch(e){\n console.error(e.message);\n}`
 module.exports = {program}
+objectChecker(generateCode(program))
 fs.writeFileSync(out, exec );
 require(out);
 interface ASTNode{

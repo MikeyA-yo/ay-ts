@@ -1,4 +1,6 @@
 exp@ l ay = 'Peak'
 exp@ f bugs(){
+   // l data = read('semi.js')
+    // write('new.js', data)
     print ay 
 }

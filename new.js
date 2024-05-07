@@ -5,6 +5,7 @@ var fs = require("node:fs");
 var out = __dirname + '/out.js';
 var programName = process.argv[2];
 var program = fs.readFileSync(programName, 'utf-8');
+var objectChecker = require('./error_handling/objectChcompiled').objectChecker;
 // this function breaks the whole program into lines
 function parse(codes) {
     return codes.split('\n');
@@ -96,7 +97,7 @@ function generateCode(program) {
     newLines.forEach(function (el) {
         el.includes('{') ? el += '' : el.includes(';') ? el += '' : el.includes('}') ? el += '' : el.includes(',') ? el += '' : el += ' ;';
         var values = parseStr(el);
-        if (el.includes('for (') || el.includes('for(') || el.includes('if(') || el.includes('if (') || el.includes('exp@ f')) {
+        if (el.includes('for (') || el.includes('for(') || el.includes('exp@ f')) {
             values = parser(el);
         }
         values[values.length] = '\n';
@@ -183,5 +184,6 @@ var utils = "const {print, timer, Day, interval, read, write, appendFile, dirnam
 var AY = "const {AY} = require(__dirname +'/objects/AY');\n";
 var exec = " ".concat(math, " ").concat(utils, " ").concat(AY, "  try {\n").concat(generateCode(program), "}catch(e){\n console.error(e.message);\n}");
 module.exports = { program: program };
+objectChecker(generateCode(program));
 fs.writeFileSync(out, exec);
 require(out);
