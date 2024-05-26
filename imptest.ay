@@ -4,5 +4,8 @@ exp@ f bugs(){
 }
 exp@ l bigMe = {
     name:'ayo',
-    accomplishment:'Peak'
+    accomplishment:'Peak',
+    print(b){
+        AY.print(b)
+    }
 }

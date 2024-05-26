@@ -26,7 +26,7 @@ print(`${today.getFullDate()} - ${time}`)
 const {ay,  bugs,  bigMe} = require("./out2")    
 bugs() ; 
 console.log(ay)   ; 
-console.log(bigMe)   ; 
+bigMe.print("I'm so cool") ; 
 }catch(e){
  console.error(e.message);
 }

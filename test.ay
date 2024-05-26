@@ -25,4 +25,4 @@ print(`${today.getFullDate()} - ${time}`)
 imp@ 'ay, bugs, bigMe' from '/imptest.ay'
 bugs()
 print ay
-print bigMe
+bigMe.print("I'm so cool")
