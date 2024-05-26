@@ -4,12 +4,13 @@
   try {
  let ay = 'Peak' ; 
  function bugs ( ) { 
-// let data = read('semi.js') ; 
-// write('new.js', data) 
 console.log(ay)   ; 
 } 
-; 
-module.exports = {ay,bugs,ay,bugs}
+ let bigMe = { 
+name:'ayo', 
+accomplishment:'Peak' 
+} 
+module.exports = {ay,bugs,bigMe,ay,bugs,bigMe}
 }catch(e){
  console.error(e.message);
 }

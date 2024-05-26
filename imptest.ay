@@ -1,6 +1,8 @@
 exp@ l ay = 'Peak'
 exp@ f bugs(){
-   // l data = read('semi.js')
-    // write('new.js', data)
     print ay 
+}
+exp@ l bigMe = {
+    name:'ayo',
+    accomplishment:'Peak'
 }

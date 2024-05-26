@@ -1,7 +1,7 @@
- const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')
- const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')
+const {rand, round, PI, floor, exp, degToRad, radToDeg} = require('./math')
+const {print, timer, Day, interval, read, write, appendFile, dirname} = require('./utils')
  const {AY} = require(__dirname +'/objects/AY');
-  try {
+try {
 let a = "my program variables are nicely scoped" ; 
 console.log(a)   ; 
 let b = "hello world" ; 
@@ -23,8 +23,10 @@ let time = today.time() ;
 //l data = read('semi.js') ; 
 //write('new.js', data) 
 print(`${today.getFullDate()} - ${time}`) 
-const {ay} = require("./out2")    ; 
-ay.some ; 
+const {ay,  bugs,  bigMe} = require("./out2")    
+bugs() ; 
+console.log(ay)   ; 
+console.log(bigMe)   ; 
 }catch(e){
  console.error(e.message);
 }
