@@ -24,9 +24,9 @@ let time = today.time() ;
 //write('new.js', data) 
 print(`${today.getFullDate()} - ${time}`) 
 const {ay,  bugs,  bigMe} = require("./out2")    
-bugs() ; 
+//bugs() ; 
 console.log(ay)   ; 
-bigMe.print("I'm so cool") ; 
+bigMe.print(bigMe.accomplishment) ; 
 }catch(e){
  console.error(e.message);
 }

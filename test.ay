@@ -23,6 +23,6 @@ l time = today.time()
 //write('new.js', data)
 print(`${today.getFullDate()} - ${time}`)
 imp@ 'ay, bugs, bigMe' from '/imptest.ay'
-bugs()
+//bugs()
 print ay
-bigMe.print("I'm so cool")
+bigMe.print(bigMe.accomplishment)

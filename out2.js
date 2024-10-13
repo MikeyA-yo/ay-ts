@@ -10,7 +10,7 @@ console.log(ay)   ;
 name:'ayo', 
 accomplishment:'Peak', 
 print(b){ 
-AY.print(b) ; 
+AY.print(b); 
 } 
 } 
 module.exports = {ay,bugs,bigMe,ay,bugs,bigMe}
