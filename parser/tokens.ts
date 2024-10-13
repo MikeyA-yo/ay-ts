@@ -14,6 +14,7 @@ export const tokens = {
   add: "+",
   sub: "-",
   div: "/",
+  mul:"*",
   rem: "%",
   shL: "<<",
   shR: ">>",
@@ -122,7 +123,7 @@ export function tokenizeLine(line: string): Token[] {
           if (/\d/.test(char)) {
             currentState = TokenType.Literal;
             currentToken += char;
-          } else if (/[+*/%=<>&|!]/.test(char)) {
+          } else if (/[+*/%=<>&|!?-]/.test(char)) {
             currentState = TokenType.Operator;
             currentToken += char;
           } else if (char === '"' || char === "'") {
@@ -145,7 +146,7 @@ export function tokenizeLine(line: string): Token[] {
         break;
 
       case TokenType.Operator:
-        if (/[+*/%=<>&|!]/.test(char)) {
+        if (/[+*/%=<>&|!?-]/.test(char)) {
           currentToken += char; // Handle multi-character operators
         } else {
           pushToken(TokenType.Operator);
@@ -159,7 +160,7 @@ export function tokenizeLine(line: string): Token[] {
           currentToken += char; // Handle numbers and decimal points
         } else {
           pushToken(TokenType.Literal);
-          if (/[+*/%=<>&|!]/.test(char)) {
+          if (/[+*/%=<>&|!?-]/.test(char)) {
             currentState = TokenType.Operator;
             currentToken += char; // Start a new operator
           } else if (/[(){}[\]:;,.]/.test(char)) {
@@ -287,6 +288,6 @@ export class TokenGen {
     return this.tokenizeLine(this.lines[this.currentLine])
   }
 }
-// const tn = new TokenGen("l b = 44\nl c = 45\nl d = b + c\nl c = 45\nl c = 45\nl c = 45\nl c = 45 //y");
-// console.log(tn.peek())
-// console.log(tn.peek(10))
+//  const tn = new TokenGen("l b = 44\nl c += 45 ?? -4 \nl d = b + c\nl c = 45\nl c = 45\nl c = 45\nl c = 45 //y");
+// console.log(tn.getRemainingToken())
+// console.log(tn.peek(100))

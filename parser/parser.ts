@@ -20,6 +20,31 @@ export class Parser {
       value: token?.value,
     };
   }
+  parseBinaryExpression(){
+    let operator;
+    let left = {
+      type:this.tokenizer.getCurrentToken()?.type,
+      value:this.tokenizer.getCurrentToken()?.value
+    }
+    this.consume();
+    switch (this.tokenizer.getCurrentToken()?.type){
+      case TokenType.Operator:
+        // todo
+        switch(this.tokenizer.getCurrentToken()?.value){
+          case tokens.add:
+          case tokens.sub:
+          case tokens.div:
+          case tokens.mul:    
+            //todo arithmetric operations
+            break
+          default:
+            // probably an error    
+        }
+        break
+      default:
+        // another error only operators should be next, don't you think so too?  
+    }
+  }
   parseVariable() {
     this.tokenizer.next();
     let identifier;
