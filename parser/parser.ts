@@ -26,23 +26,51 @@ export class Parser {
       type:this.tokenizer.getCurrentToken()?.type,
       value:this.tokenizer.getCurrentToken()?.value
     }
+    let right;
+    let value;
     this.consume();
-    switch (this.tokenizer.getCurrentToken()?.type){
-      case TokenType.Operator:
-        // todo
-        switch(this.tokenizer.getCurrentToken()?.value){
-          case tokens.add:
-          case tokens.sub:
-          case tokens.div:
-          case tokens.mul:    
-            //todo arithmetric operations
-            break
-          default:
-            // probably an error    
-        }
-        break
-      default:
-        // another error only operators should be next, don't you think so too?  
+    if(this.tokenizer.getTokenLeftLine()?.length !== 0){
+      switch (this.tokenizer.getCurrentToken()?.type){
+        case TokenType.Operator:
+          // todo
+          switch(this.tokenizer.getCurrentToken()?.value){
+            case tokens.add:
+            case tokens.sub:
+            case tokens.div:
+            case tokens.mul:    
+              //todo arithmetric operations
+              operator = this.consume()?.value;
+              let token = this.tokenizer.getTokenLeftLine()
+              if(token){
+                 if(token.length > 1){
+                   right = this.parseBinaryExpression();
+                 }else{
+                  value = this.consume()
+                 }
+              }
+              break
+            default:
+              // probably an error    
+          }
+          break
+        default:
+          // another error only operators should be next, don't you think so too?  
+      }
+    }
+    if(operator !== void 0 && right !== void 0){
+      return {
+        type: ASTNodeType.BinaryExpression,
+        operator,
+        left,
+        right
+      }
+    }else{
+      return {
+        type: ASTNodeType.BinaryExpression,
+        operator,
+        left,
+        value
+      }
     }
   }
   parseVariable() {
@@ -52,12 +80,13 @@ export class Parser {
     if (this.tokenizer.getCurrentToken()?.type === TokenType.Identifier) {
       identifier = this.consume()?.value;
       //this check is used to know whether it's just a plain declaration, without any value initialised in the variable
-      if(this.tokenizer.getTokenLeftLine()?.length === void 0){
+      if(this.tokenizer.getTokenLeftLine()?.length === 0){
         return {
           type:ASTNodeType.VariableDeclaration,
           identifier
         }
       }
+      
       // here it is declaration and initialisation, so i have to check the type of value on the other side
       // to know how to go about parsing
       if (this.tokenizer.getCurrentToken()?.value === tokens.assign) {
@@ -71,6 +100,8 @@ export class Parser {
             //todo
             if(leftTokenValues?.length === 0){
               initializer = this.parseLiteral();
+            }else{
+              initializer = this.parseBinaryExpression()
             }
             break;
           case TokenType.StringLiteral:
@@ -127,6 +158,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'my string'\nl c = 'another string test'\nl nothing=23.544");
+const p = new Parser("l b = 'my string'\nl c = 'another string test'\nl bine = 3 * 3 + 6-32+44");
 p.start();
-console.log(p.nodes)
+console.log(p.nodes[p.nodes.length-1])

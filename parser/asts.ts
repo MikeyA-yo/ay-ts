@@ -13,6 +13,7 @@ export enum ASTNodeType {
 }
 type right = {
     type?:string;
+    name?:string;
     operator?:string;
     left?:{
         type?:string;

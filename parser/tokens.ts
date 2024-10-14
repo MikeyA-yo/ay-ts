@@ -224,6 +224,7 @@ export class TokenGen {
   }
   next(): void {
     let currentLineToken = this.tokenizeLine(this.lines[this.currentLine]);
+    // figuring out the right array indexing
     if (this.currentTokenNo < currentLineToken.length - 1) {
       this.currentTokenNo++;
     } else {
@@ -290,6 +291,6 @@ export class TokenGen {
     return this.tokenizeLine(this.lines[this.currentLine])
   }
 }
- const tn = new TokenGen("l b = 44\nl c += 45 ?? -4 \nl d = b + c\nl c = 45\nl c = 45\nl c = 45\nl c = 45 //y");
-console.log(tn.getRemainingToken())
-console.log(tn.peek(100))
+//  const tn = new TokenGen("l b = 44\nl c += 45 ?? -4 \nl d = b +    c //y");
+// console.log(tn.getRemainingToken())
+// console.log(tn.peek(100))
