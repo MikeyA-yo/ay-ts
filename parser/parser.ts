@@ -200,65 +200,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'my string'\nl c = b\nl bine = 3 * 3 + 6+44\nl bina =(7 {n})\nl ob = lol");
+const p = new Parser("l b = 'my string'\nl c = b\nl bine = 3 * 3 + 6+44\nl bina =(7{n})\nl ob = lol");
 p.start();
 console.log(p.nodes);
-// private groupBy(group:string){
-  //   let mGroup = group;
-  //   let endCase = group
-  //   switch(group){
-  //     case "{":
-  //       //todo
-  //       this.consume();
-  //       while (this.tokenizer.getCurrentToken()?.value !== "}"){
-  //         let currentGroup = ""
-  //         if(this.tokenizer.getCurrentToken()?.value === "{"){
-  //           currentGroup += this.groupBy("{")
-  //         }else{
-  //           currentGroup += this.consume()?.value
-  //         }
-  //         endCase = "}"
-  //         mGroup += currentGroup 
-  //       }
-  //       break;
-  //     case "[":
-  //       //todo
-  //       this.consume();
-  //       while (this.tokenizer.getCurrentToken()?.value !== "]"){
-  //         let currentGroup = ""
-  //         if(this.tokenizer.getCurrentToken()?.value === "["){
-  //           currentGroup += this.groupBy("[")
-  //         }else{
-  //           currentGroup += this.consume()?.value
-  //         }
-  //         endCase = "]"
-  //         mGroup += currentGroup 
-  //       }
-  //       break;
-  //     case "(": 
-  //       //todo
-  //       this.consume();
-  //       while (this.tokenizer.getCurrentToken()?.value !== ")"){
-  //         let currentGroup = ""
-  //         if(this.tokenizer.getCurrentToken()?.value === "("){
-  //           currentGroup += this.groupBy("(")
-  //         }else{
-  //           console.log(this.tokenizer.getCurrentToken())
-  //           currentGroup += this.consume()?.value
-            
-  //         }
-  //         endCase = ")"
-  //         mGroup += currentGroup ;
-  //       }
-  //       console.log(mGroup)
-  //       break;
-  //     default:
-  //       //default
-  //       this.consume();
-  //       while(this.tokenizer.getCurrentToken()?.value !== group){
-  //           mGroup += this.tokenizer.getCurrentToken()?.value
-  //       }
-
-  //   }
-  //   return mGroup + endCase;
-  // }

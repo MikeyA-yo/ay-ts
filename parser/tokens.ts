@@ -130,7 +130,7 @@ function tokenize(line: string) {
     if (sOpen) {
       currentToken += line[i];
       //start other tests, first for identifiers and keywords, notice you'd always see...
-      // !sOpen && currentType !== TokenType.SingleLineComment, to make sure the code in the 
+      // !sOpen && currentType !== TokenType.SingleLineComment, to make sure the code in the
       // block doesn't run when a string is open or when a comment is on
     } else if (
       /[a-zA-Z_@]/.test(line[i]) &&
@@ -144,10 +144,12 @@ function tokenize(line: string) {
       } else {
         currentType = TokenType.Identifier;
         currentToken = line[i];
-      }//checks if it's the last character or not
+      } //checks if it's the last character or not
       if (line.length - 1 >= i + 1) {
-        if (!/[a-zA-Z_@]/.test(line[i + 1])) { //if it's not the last character and the next character fails the test then we can push it
-          if (isKeyword(currentToken)) { // checks keyword or identifier
+        if (!/[a-zA-Z_@]/.test(line[i + 1])) {
+          //if it's not the last character and the next character fails the test then we can push it
+          if (isKeyword(currentToken)) {
+            // checks keyword or identifier
             tokens.push({ type: TokenType.Keyword, value: currentToken });
             currentToken = "";
           } else {
@@ -271,7 +273,7 @@ function tokenize(line: string) {
 
 //with this log test, i have successfully defeated A.I
 //console.log(tokenize("l bed = false"))
-console.log(tokenize("l c = 'Heyo' //(4,3)"), tokenizeLine("l c= 'Heyo' //(4,3)"));
+//console.log(tokenize("l c = 'Heyo' //(4,3)"), tokenizeLine("l c= 'Heyo' //(4,3)"));
 
 //original tokenize function, written by me and AIs worked together, but a bug was there so i wrote tokenize all by myself from scratch
 export function tokenizeLine(line: string): Token[] {
@@ -405,7 +407,7 @@ export class TokenGen {
   currentLine: number;
   currentTokenNo: number;
   constructor(file: string) {
-    this.tokenizeLine = tokenizeLine;
+    this.tokenizeLine = tokenize;
     this.lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
     this.currentLine = 0;
     this.currentTokenNo = 0;
