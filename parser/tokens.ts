@@ -14,7 +14,7 @@ export const tokens = {
   add: "+",
   sub: "-",
   div: "/",
-  mul:"*",
+  mul: "*",
   rem: "%",
   shL: "<<",
   shR: ">>",
@@ -24,7 +24,7 @@ export const tokens = {
   or: "|",
   oror: "||",
   andand: "&&",
-  not:"!"
+  not: "!",
 };
 const keywords = [
   "l", // custom: like 'let'
@@ -86,6 +86,103 @@ export interface Token {
 function isKeyword(value: string) {
   return keywords.includes(value);
 }
+function tokenize(line: string) {
+  const tokens: Token[] = [];
+  let currentToken = "";
+  let currentType: TokenType = TokenType.Identifier;
+  for (let i = 0; i < line.length; i++) {
+    if (isKeyword(line[i])) {
+      currentType = TokenType.Keyword;
+      currentToken = line[i];
+      tokens.push({ type: currentType, value: currentToken });
+    } else if (/[a-zA-Z_@]/.test(line[i])) {
+      if (currentType == TokenType.Identifier) {
+        currentToken += line[i];
+      } else {
+        currentType = TokenType.Identifier;
+        currentToken = line[i];
+      }
+      if (line.length - 1 >= i + 1) {
+        if (!/[a-zA-Z_@]/.test(line[i + 1])) {
+          tokens.push({ type: currentType, value: currentToken });
+        }
+      }
+    } else if (/\s/.test(line[i])) {
+      currentType = TokenType.Whitespace;
+      if (currentToken.length > 0 && /\s/.test(currentToken)) {
+        currentToken += line[i];
+      } else {
+        currentToken = line[i];
+      }
+      if (line.length - 1 >= i + 1) {
+        if (!/\s/.test(line[i + 1])) {
+          tokens.push({ type: currentType, value: currentToken });
+        }
+      }
+    } else if (/[+*/%=<>&|!?-]/.test(line[i])) {
+      currentType = TokenType.Operator;
+      if (currentToken.length > 0 && /[+*/%=<>&|!?-]/.test(currentToken)) {
+        switch (currentToken.length) {
+          case 1:
+            if (currentToken !== "/") {
+              currentToken += line[i];
+            }
+            break;
+          case 2:
+            if (
+              (currentToken === ">>" || currentToken === "<<") &&
+              (line[i] === ">" || line[i] === "<")
+            ) {
+              currentToken += line[i];
+            }
+            break;
+          default:
+            currentType = TokenType.Unknown;
+            currentToken += line[i];
+        }
+      } else {
+        currentToken = line[i];
+      }
+      if (line.length - 1 >= i + 1) {
+        if (!/[+*/%=<>&|!?-]/.test(line[i + 1])) {
+          tokens.push({ type: currentType, value: currentToken });
+        }
+      }
+      // hmm: /^-?\d+(_?\d+)*(?:\.\d+)?$/
+    } else if (/\d/.test(line[i])) {
+      currentType = TokenType.Literal;
+      if (
+        currentToken.length > 0 &&
+        (/\d/.test(currentToken) || currentToken.endsWith("."))
+      ) {
+        if (/\d/.test(currentToken) || currentToken.endsWith(".")) {
+          currentToken += line[i];
+        }
+      } else {
+        currentToken = line[i];
+      }
+      if (line.length - 1 >= i + 1) {
+        if (!/\d/.test(line[i + 1]) && line[i + 1] !== ".") {
+          tokens.push({ type: currentType, value: currentToken });
+        }
+      }
+    } else if (/[(){}[\]:;,.]/.test(line[i])) {
+      if (
+        currentType === TokenType.Literal &&
+        line[i] === "." &&
+        !currentToken.includes(".") &&
+        currentToken.length > 0
+      ) {
+        currentToken += line[i];
+      } else {
+        //todo
+      }
+    }
+  }
+  tokens.push({ type: currentType, value: currentToken });
+  return tokens;
+}
+console.log(tokenize("exp@ l bn = bn >= 6.9 ?? -8.99"));
 export function tokenizeLine(line: string): Token[] {
   const tokens: Token[] = [];
   let currentToken = "";
@@ -106,14 +203,14 @@ export function tokenizeLine(line: string): Token[] {
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-    
-    if (char === '/' && line[i + 1] === '/') {
-        // Push any token before the comment
-        pushToken(currentState);
-        // Capture the rest of the line as a single comment token
-        tokens.push({ type: TokenType.SingleLineComment, value: line.slice(i) });
-        break; // Stop processing the rest of the line
-      }
+
+    if (char === "/" && line[i + 1] === "/") {
+      // Push any token before the comment
+      pushToken(currentState);
+      // Capture the rest of the line as a single comment token
+      tokens.push({ type: TokenType.SingleLineComment, value: line.slice(i) });
+      break; // Stop processing the rest of the line
+    }
     switch (currentState) {
       case TokenType.Identifier:
         if (/[a-zA-Z_@]/.test(char)) {
@@ -172,7 +269,7 @@ export function tokenizeLine(line: string): Token[] {
           }
         }
         break;
-    
+
       case TokenType.StringLiteral:
         currentToken += char;
         if (char === quoteChar && !isEscaped(line, i)) {
@@ -228,7 +325,7 @@ export class TokenGen {
     if (this.currentTokenNo < currentLineToken.length - 1) {
       this.currentTokenNo++;
     } else {
-      if(this.currentLine < this.lines.length - 1){
+      if (this.currentLine < this.lines.length - 1) {
         this.currentTokenNo = 0;
         this.currentLine++;
       }
@@ -245,26 +342,44 @@ export class TokenGen {
       }
     }
   }
-  peek(steps?:number):Token{
+  peek(steps?: number): Token {
     let token;
-    if(steps){
-      for (let i = 0; i < steps; i++){
-        this.next()
+    if (steps) {
+      for (let i = 0; i < steps; i++) {
+        this.next();
       }
-      token = this.getCurrentToken()
-      for (let i = 0; i < steps; i++){
-        this.back()
+      token = this.getCurrentToken();
+      for (let i = 0; i < steps; i++) {
+        this.back();
       }
-      return token
-    }else{
-      this.next()
-      token = this.getCurrentToken()
-      this.back()
-      return token
+      return token;
+    } else {
+      this.next();
+      token = this.getCurrentToken();
+      this.back();
+      return token;
+    }
+  }
+  skip(steps?: number) {
+    let token;
+    if (steps) {
+      for (let i = 0; i < steps; i++) {
+        this.next();
+      }
+      token = this.getCurrentToken();
+      return token;
+    } else {
+      this.next();
+      token = this.getCurrentToken();
+      return token;
     }
   }
   getCurrentToken() {
-    if (this.currentLine > this.lines.length || this.currentLine < 0 || this.lines[this.currentLine] === void 0) {
+    if (
+      this.currentLine > this.lines.length ||
+      this.currentLine < 0 ||
+      this.lines[this.currentLine] === void 0
+    ) {
       return void 0;
     }
     return this.tokenizeLine(this.lines[this.currentLine])[this.currentTokenNo];
@@ -281,16 +396,13 @@ export class TokenGen {
     return tokensLeft;
   }
   getTokenLeftLine() {
-    if(this.lines[this.currentLine]){
+    if (this.lines[this.currentLine]) {
       return this.tokenizeLine(this.lines[this.currentLine]).slice(
         this.currentTokenNo + 1
       );
     }
   }
-  getFullLineToken(){
-    return this.tokenizeLine(this.lines[this.currentLine])
+  getFullLineToken() {
+    return this.tokenizeLine(this.lines[this.currentLine]);
   }
 }
-//  const tn = new TokenGen("l b = 44\nl c += 45 ?? -4 \nl d = b +    c //y");
-// console.log(tn.getRemainingToken())
-// console.log(tn.peek(100))

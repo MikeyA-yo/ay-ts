@@ -4,15 +4,53 @@ import { Token, TokenGen, tokens, TokenType } from "./tokens";
 export class Parser {
   private tokenizer: TokenGen;
   nodes: ASTNode[]
+  parens: string[];
+  braces: string[];
+  bracs: string[];
   constructor(file: string) {
     this.tokenizer = new TokenGen(file);
-    this.nodes = []
+    this.nodes = [];
+    this.parens = [];
+    this.braces = [];
+    this.bracs = []
   }
   consume() {
     const token = this.tokenizer.getCurrentToken();
     this.tokenizer.next();
     return token;
   }
+  private groupBy(group: string): string {
+    let mGroup = group; // Initial grouping character ('(', '[', '{')
+    const closingChar = group === "{" ? "}" : group === "[" ? "]" : ")"; // Determine the corresponding closing character
+    this.consume(); // Move past the opening group character
+  
+    while (this.tokenizer.getCurrentToken()?.value !== closingChar) {
+      if (!this.tokenizer.getCurrentToken()) {
+        throw new Error(`Unmatched grouping: expected ${closingChar}`);
+      }
+  
+      let currentGroup = "";
+  
+      // Handle nested groups
+      const currentTokenValue = this.tokenizer.getCurrentToken()?.value;
+      if (currentTokenValue === "(" || currentTokenValue === "[" || currentTokenValue === "{") {
+        currentGroup += this.groupBy(currentTokenValue); // Recursively handle nested groups
+      } else if (currentTokenValue === "," || currentTokenValue === ";") {
+        // Handle commas or semicolons (if present) within the group
+        currentGroup += this.consume()?.value;
+      } else {
+        // Handle regular tokens (numbers, identifiers, etc.)
+        currentGroup += this.consume()?.value;
+      }
+  
+      mGroup += currentGroup;
+    }
+  
+    this.consume(); // Consume the closing character
+    return mGroup + closingChar;
+  }
+  
+  
   parseLiteral(): ASTNode {
     const token = this.consume();
     return {
@@ -23,7 +61,7 @@ export class Parser {
   parseBinaryExpression(){
     let operator;
     let left = {
-      type:this.tokenizer.getCurrentToken()?.type,
+      type:this.tokenizer.getCurrentToken()?.type || ASTNodeType.Literal,
       value:this.tokenizer.getCurrentToken()?.value
     }
     let right;
@@ -95,6 +133,9 @@ export class Parser {
         switch (this.tokenizer.getCurrentToken()?.type) {
           case TokenType.Identifier:
             //todo
+            if(leftTokenValues?.length === 0){
+              initializer = this.parseLiteral();
+            }
             break;
           case TokenType.Literal:
             //todo
@@ -112,6 +153,7 @@ export class Parser {
             break;
           case TokenType.Punctuation:
             //todo
+            initializer = this.groupBy(this.tokenizer.getCurrentToken()?.value ?? "(")
             break;
           case TokenType.Operator:
             if (this.tokenizer.getCurrentToken()?.value === tokens.not) {
@@ -158,6 +200,65 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'my string'\nl c = 'another string test'\nl bine = 3 * 3 + 6-32+44");
+const p = new Parser("l b = 'my string'\nl c = b\nl bine = 3 * 3 + 6+44\nl bina =(7 {n})\nl ob = lol");
 p.start();
-console.log(p.nodes[p.nodes.length-1])
+console.log(p.nodes);
+// private groupBy(group:string){
+  //   let mGroup = group;
+  //   let endCase = group
+  //   switch(group){
+  //     case "{":
+  //       //todo
+  //       this.consume();
+  //       while (this.tokenizer.getCurrentToken()?.value !== "}"){
+  //         let currentGroup = ""
+  //         if(this.tokenizer.getCurrentToken()?.value === "{"){
+  //           currentGroup += this.groupBy("{")
+  //         }else{
+  //           currentGroup += this.consume()?.value
+  //         }
+  //         endCase = "}"
+  //         mGroup += currentGroup 
+  //       }
+  //       break;
+  //     case "[":
+  //       //todo
+  //       this.consume();
+  //       while (this.tokenizer.getCurrentToken()?.value !== "]"){
+  //         let currentGroup = ""
+  //         if(this.tokenizer.getCurrentToken()?.value === "["){
+  //           currentGroup += this.groupBy("[")
+  //         }else{
+  //           currentGroup += this.consume()?.value
+  //         }
+  //         endCase = "]"
+  //         mGroup += currentGroup 
+  //       }
+  //       break;
+  //     case "(": 
+  //       //todo
+  //       this.consume();
+  //       while (this.tokenizer.getCurrentToken()?.value !== ")"){
+  //         let currentGroup = ""
+  //         if(this.tokenizer.getCurrentToken()?.value === "("){
+  //           currentGroup += this.groupBy("(")
+  //         }else{
+  //           console.log(this.tokenizer.getCurrentToken())
+  //           currentGroup += this.consume()?.value
+            
+  //         }
+  //         endCase = ")"
+  //         mGroup += currentGroup ;
+  //       }
+  //       console.log(mGroup)
+  //       break;
+  //     default:
+  //       //default
+  //       this.consume();
+  //       while(this.tokenizer.getCurrentToken()?.value !== group){
+  //           mGroup += this.tokenizer.getCurrentToken()?.value
+  //       }
+
+  //   }
+  //   return mGroup + endCase;
+  // }
