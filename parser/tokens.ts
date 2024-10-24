@@ -90,12 +90,26 @@ function tokenize(line: string) {
   const tokens: Token[] = [];
   let currentToken = "";
   let currentType: TokenType = TokenType.Identifier;
+  let qChar = "";
+  let sOpen = false;
   for (let i = 0; i < line.length; i++) {
-    if (isKeyword(line[i])) {
-      currentType = TokenType.Keyword;
-      currentToken = line[i];
-      tokens.push({ type: currentType, value: currentToken });
-    } else if (/[a-zA-Z_@]/.test(line[i])) {
+    if (line[i] === '"' || line[i] === "'") {
+      qChar = line[i];
+      if (sOpen) {
+        currentToken += qChar;
+        tokens.push({type: currentType, value: currentToken});
+        //cleanup
+        currentToken = ""
+        sOpen = false
+      } else {
+        currentType = TokenType.StringLiteral;
+        sOpen = true
+        // currentToken = qChar
+      }
+    }
+    if (sOpen) {
+      currentToken += line[i];
+    } else if (/[a-zA-Z_@]/.test(line[i]) && !sOpen) {
       if (currentType == TokenType.Identifier) {
         currentToken += line[i];
       } else {
@@ -104,10 +118,16 @@ function tokenize(line: string) {
       }
       if (line.length - 1 >= i + 1) {
         if (!/[a-zA-Z_@]/.test(line[i + 1])) {
-          tokens.push({ type: currentType, value: currentToken });
+          if (isKeyword(currentToken)) {
+            tokens.push({ type: TokenType.Keyword, value: currentToken });
+            currentToken = ""
+          } else {
+            tokens.push({ type: currentType, value: currentToken });
+            currentToken = ""
+          }
         }
       }
-    } else if (/\s/.test(line[i])) {
+    } else if (/\s/.test(line[i]) && !sOpen) {
       currentType = TokenType.Whitespace;
       if (currentToken.length > 0 && /\s/.test(currentToken)) {
         currentToken += line[i];
@@ -117,9 +137,10 @@ function tokenize(line: string) {
       if (line.length - 1 >= i + 1) {
         if (!/\s/.test(line[i + 1])) {
           tokens.push({ type: currentType, value: currentToken });
+          currentToken = ""
         }
       }
-    } else if (/[+*/%=<>&|!?-]/.test(line[i])) {
+    } else if (/[+*/%=<>&|!?-]/.test(line[i]) && !sOpen) {
       currentType = TokenType.Operator;
       if (currentToken.length > 0 && /[+*/%=<>&|!?-]/.test(currentToken)) {
         switch (currentToken.length) {
@@ -146,10 +167,11 @@ function tokenize(line: string) {
       if (line.length - 1 >= i + 1) {
         if (!/[+*/%=<>&|!?-]/.test(line[i + 1])) {
           tokens.push({ type: currentType, value: currentToken });
+          currentToken = ""
         }
       }
       // hmm: /^-?\d+(_?\d+)*(?:\.\d+)?$/
-    } else if (/\d/.test(line[i])) {
+    } else if (/\d/.test(line[i]) && !sOpen) {
       currentType = TokenType.Literal;
       if (
         currentToken.length > 0 &&
@@ -164,9 +186,10 @@ function tokenize(line: string) {
       if (line.length - 1 >= i + 1) {
         if (!/\d/.test(line[i + 1]) && line[i + 1] !== ".") {
           tokens.push({ type: currentType, value: currentToken });
+          currentToken = ""
         }
       }
-    } else if (/[(){}[\]:;,.]/.test(line[i])) {
+    } else if (/[(){}[\]:;,.]/.test(line[i]) && !sOpen) {
       if (
         currentType === TokenType.Literal &&
         line[i] === "." &&
@@ -175,14 +198,23 @@ function tokenize(line: string) {
       ) {
         currentToken += line[i];
       } else {
-        //todo
+        currentType = TokenType.Punctuation;
+        currentToken = line[i];
+        tokens.push({ type: currentType, value: currentToken });
+        currentToken = ""
       }
     }
   }
-  tokens.push({ type: currentType, value: currentToken });
+  if(currentToken !== ""){
+    tokens.push({ type: currentType, value: currentToken });
+  }
   return tokens;
 }
-console.log(tokenize("exp@ l bn = bn >= 6.9 ?? -8.99"));
+
+console.log(
+  tokenize("exp@ l bn = bn >= 6.9 ?? -8.99 this.val 'mbbs is cool' + 'yh'")
+);
+
 export function tokenizeLine(line: string): Token[] {
   const tokens: Token[] = [];
   let currentToken = "";
