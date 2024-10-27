@@ -6,6 +6,8 @@ export enum ASTNodeType {
   Expression,
   Literal,
   Identifier,
+  NotExpression,
+  TernaryExpression,
   BinaryExpression,
   UnaryExpression,
   FunctionDeclaration,

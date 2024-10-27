@@ -25,10 +25,23 @@ export const tokens = {
   oror: "||",
   andand: "&&",
   not: "!",
+  nullC:"??",
+  equality:"==",
+  inEqualty:"!=",
+  subEql:"-=",
+  addEql:"+=",
+  mulEql:"*=",
+  divEql:"/=",
+  inc:"++",
+  dec:"--",
+  exp:"**",
+  ororEql: "||=",
+  andandEql:"&&="
 };
 const keywords = [
   "l", // custom: like 'let'
   "define", // custom
+  "defer",
   "f", // custom: like 'function'
   "for", // custom & JavaScript
   "if", // custom & JavaScript
@@ -123,16 +136,14 @@ function tokenize(line: string) {
       }
     }
     // keep adding every character as a comment, but since we only expect a line this is fine as it continues to the end of the line
-    if (currentType === TokenType.SingleLineComment) {
-      currentToken += line[i];
-    }
     //keep adding string characters until sOpen is false, i.e it's closed with the ending quotechar
-    if (sOpen) {
+    if (sOpen || (currentType === TokenType.SingleLineComment)) {
       currentToken += line[i];
       //start other tests, first for identifiers and keywords, notice you'd always see...
       // !sOpen && currentType !== TokenType.SingleLineComment, to make sure the code in the
       // block doesn't run when a string is open or when a comment is on
-    } else if (
+    } 
+     if (
       /[a-zA-Z_@]/.test(line[i]) &&
       !sOpen &&
       currentType !== TokenType.SingleLineComment
@@ -176,7 +187,7 @@ function tokenize(line: string) {
         }
       }
     } else if (
-      /[+*/%=<>&|!?-]/.test(line[i]) &&
+      /[+*/%=<>&|!?^-]/.test(line[i]) &&
       !sOpen &&
       currentType !== TokenType.SingleLineComment
     ) {
@@ -184,7 +195,7 @@ function tokenize(line: string) {
       if (currentToken.length > 0 && /[+*/%=<>&|!?-]/.test(currentToken)) {
         switch (currentToken.length) {
           case 1:
-            if (currentToken !== "/") {
+            if (currentToken !== "/" && currentToken !== "^") {
               if (currentToken === line[i]) {
                 currentToken += line[i];
               } else if (line[i] === "=") {
@@ -273,7 +284,7 @@ function tokenize(line: string) {
 
 //with this log test, i have successfully defeated A.I
 //console.log(tokenize("l bed = false"))
-//console.log(tokenize("l c = 'Heyo' //(4,3)"), tokenizeLine("l c= 'Heyo' //(4,3)"));
+console.log(tokenize("l c = 'Heyo' ^ //(4,3)"), tokenizeLine("l c= 'Heyo' ^ //(4,3)"));
 
 //original tokenize function, written by me and AIs worked together, but a bug was there so i wrote tokenize all by myself from scratch
 export function tokenizeLine(line: string): Token[] {
@@ -499,3 +510,6 @@ export class TokenGen {
     return this.tokenizeLine(this.lines[this.currentLine]);
   }
 }
+// if (currentType === TokenType.SingleLineComment) {
+    //   currentToken += line[i];
+    // }

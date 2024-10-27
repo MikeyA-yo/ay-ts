@@ -111,6 +111,22 @@ export class Parser {
       }
     }
   }
+  parseNotExpression(){
+    this.consume();
+    let initializer;
+    let leftTokens = this.tokenizer.getTokenLeftLine()
+    if (leftTokens){
+       if(leftTokens.length > 1){
+        //todo
+       }else {
+        initializer = "!" + this.consume()?.value
+       }
+    }
+    return {
+      type: ASTNodeType.NotExpression,
+      value:initializer
+    }
+  }
   parseVariable() {
     this.tokenizer.next();
     let identifier;
@@ -158,6 +174,7 @@ export class Parser {
           case TokenType.Operator:
             if (this.tokenizer.getCurrentToken()?.value === tokens.not) {
               //todo
+              initializer = this.parseNotExpression()
               break;
             } else {
               // another error, fallthrough
@@ -200,6 +217,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'my string'\nl c = b\nl bine = 3 * 3 + 6+44\nl bina =(7{n})\nl ob = lol");
+const p = new Parser("l b = 'my string'\nl c = !b\nl bine = 3 * 3 + 6+44\nl bina =(7{n})\nl ob = lol");
 p.start();
 console.log(p.nodes);
