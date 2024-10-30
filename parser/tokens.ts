@@ -155,7 +155,7 @@ function tokenize(line: string) {
       } else {
         currentType = TokenType.Identifier;
         currentToken = line[i];
-      } //checks if it's the last character or not
+      } //checks if it's the last character or not, passes if not last char
       if (line.length - 1 >= i + 1) {
         if (!/[a-zA-Z_@]/.test(line[i + 1])) {
           //if it's not the last character and the next character fails the test then we can push it
