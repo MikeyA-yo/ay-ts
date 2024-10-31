@@ -19,13 +19,13 @@ type right = {
     operator?:string;
     left?:{
         type?:string;
-        name?:string
+        value?:string
     };
     right?:right
 }
 type left = {
     type?:string;
-    name?:string
+    value?:string
 }
 type init = {
     type?:string;

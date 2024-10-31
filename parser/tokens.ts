@@ -284,7 +284,7 @@ function tokenize(line: string) {
 
 //with this log test, i have successfully defeated A.I
 //console.log(tokenize("l bed = false"))
-console.log(tokenize("l c = 'Heyo' ^ //(4,3)"), tokenizeLine("l c= 'Heyo' ^ //(4,3)"));
+//console.log(tokenize("l c = 'Heyo' ^ //(4,3)"), tokenizeLine("l c= 'Heyo' ^ //(4,3)"));
 
 //original tokenize function, written by me and AIs worked together, but a bug was there so i wrote tokenize all by myself from scratch
 export function tokenizeLine(line: string): Token[] {

@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType } from "./asts";
-import { Token, TokenGen, tokens, TokenType } from "./tokens";
+import { TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   private tokenizer: TokenGen;
@@ -107,19 +107,19 @@ export class Parser {
         type: ASTNodeType.BinaryExpression,
         operator,
         left,
-        value
+        right: value
       }
     }
   }
-  parseNotExpression(){
-    this.consume();
+  parseNotnMinusExpression(){
+    let val = this.consume()?.value ?? "";
     let initializer;
     let leftTokens = this.tokenizer.getTokenLeftLine()
     if (leftTokens){
        if(leftTokens.length > 1){
         //todo
        }else {
-        initializer = "!" + this.consume()?.value
+        initializer = val + this.consume()?.value 
        }
     }
     return {
@@ -172,9 +172,9 @@ export class Parser {
             initializer = this.groupBy(this.tokenizer.getCurrentToken()?.value ?? "(")
             break;
           case TokenType.Operator:
-            if (this.tokenizer.getCurrentToken()?.value === tokens.not) {
+            if (this.tokenizer.getCurrentToken()?.value === tokens.not || this.tokenizer.getCurrentToken()?.value === tokens.sub ) {
               //todo
-              initializer = this.parseNotExpression()
+              initializer = this.parseNotnMinusExpression()
               break;
             } else {
               // another error, fallthrough
@@ -217,6 +217,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'my string'\nl c = !b\nl bine = 3 * 3 + 6+44\nl bina =(7{n})\nl ob = lol");
+const p = new Parser("l b = 'my string'\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob = lol");
 p.start();
 console.log(p.nodes);
