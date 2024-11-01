@@ -58,7 +58,11 @@ export interface ASTNode {
   consequent?:ASTNode;
   alternate?:ASTNode
 }
-
+export interface Variable{
+  dataType: string,
+  val:string,
+  nodePos:number
+}
 export interface VariableDeclarationNode extends ASTNode {
   type: ASTNodeType.VariableDeclaration;
   identifier: string;
