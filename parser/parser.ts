@@ -72,17 +72,6 @@ export class Parser {
     let right;
     let value;
     let t = this.consume()?.type;
-
-    // if(t === TokenType.StringLiteral){
-    //   if (this.tokenizer.getCurrentToken()?.value === tokens.add || this.tokenizer.getCurrentToken()?.value === tokens.comma){
-    //     operator = tokens.add // dynamically replace , to + for strings as this is a syntax in my lang such that l b = "i am cool" , "Yes" concats the strings
-    //     this.consume()
-    //     let token = this.tokenizer.getTokenLeftLine()
-    //   }else{
-    //     // throw error
-    //   }
-    //   break
-    // }
     if (this.tokenizer.getTokenLeftLine()?.length !== 0) {
       switch (t) {
         case TokenType.Literal:
