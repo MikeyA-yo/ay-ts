@@ -6,12 +6,13 @@ export enum ASTNodeType {
   Expression,
   Literal,
   Identifier,
-  NotExpression,
   TernaryExpression,
   BinaryExpression,
   UnaryExpression,
   FunctionDeclaration,
-  BlockStatement
+  DefDecl,
+  BlockStatement,
+  Return
 }
 type right = {
     type?:string;

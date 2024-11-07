@@ -1,13 +1,16 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { TokenGen, tokens, TokenType } from "./tokens";
+import { opToks, TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
+  defines: Map<string, string>;
+  // defines: {[key: string]};
   private tokenizer: TokenGen;
   nodes: ASTNode[];
   parens: string[];
   braces: string[];
   bracs: string[];
   vars: Variable[];
+  errors: string[];
   constructor(file: string) {
     this.tokenizer = new TokenGen(file);
     this.nodes = [];
@@ -15,6 +18,8 @@ export class Parser {
     this.braces = [];
     this.bracs = [];
     this.vars = [];
+    this.errors = [];
+    this.defines = new Map()
   }
   consume() {
     const token = this.tokenizer.getCurrentToken();
@@ -55,9 +60,43 @@ export class Parser {
     this.consume(); // Consume the closing character
     return mGroup + closingChar;
   }
-
+  expectPeek(t: TokenType) {
+    let pk = this.tokenizer.peek();
+    if (pk.type === t) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  expectToken(t: TokenType) {
+    let tk = this.tokenizer.getCurrentToken();
+    if (tk.type === t) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  expectPeekVal(v: string) {
+    let pk = this.tokenizer.peek();
+    if (pk.value === v) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  expectTokenVal(v: string) {
+    let tk = this.tokenizer.getCurrentToken();
+    if (tk.value === v) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   parseLiteral(): ASTNode {
     const token = this.consume();
+    if (this.expectToken(TokenType.NewLine) || this.expectToken(TokenType.EOF)) {
+      this.consume();
+    }
     return {
       type: ASTNodeType.Literal,
       value: token?.value,
@@ -66,7 +105,7 @@ export class Parser {
   parseBinaryExpression() {
     let operator;
     let left = {
-      type: this.tokenizer.getCurrentToken()?.type || ASTNodeType.Literal,
+      type: ASTNodeType.Literal,
       value: this.tokenizer.getCurrentToken()?.value,
     };
     let right;
@@ -75,51 +114,37 @@ export class Parser {
     if (this.tokenizer.getTokenLeftLine()?.length !== 0) {
       switch (t) {
         case TokenType.Literal:
-          switch (this.tokenizer.getCurrentToken()?.type) {
-            case TokenType.Operator:
-              // todo
-              switch (this.tokenizer.getCurrentToken()?.value) {
-                case tokens.add:
-                case tokens.sub:
-                case tokens.div:
-                case tokens.mul:
-                  //todo arithmetric operations
-                  operator = this.consume()?.value;
-                  let token = this.tokenizer.getTokenLeftLine();
-                  if (token) {
-                    if (token.length > 1) {
-                      right = this.parseBinaryExpression();
-                    } else {
-                      value = this.consume();
-                    }
-                  }
-                  break;
-                default:
-                // probably an error
+        case TokenType.Identifier:
+        case TokenType.StringLiteral:
+          let op = this.tokenizer.getCurrentToken()?.value as string;
+          switch (true) {
+            case opToks.includes(op) ||
+              this.tokenizer.getCurrentToken()?.value === ",":
+              //todo arithmetric operations
+              if (
+                t === TokenType.StringLiteral ||
+                (t === TokenType.Identifier &&
+                  this.tokenizer.getCurrentToken()?.value === ",")
+              ) {
+                operator = "+";
+                this.consume();
+              } else if (this.tokenizer.getCurrentToken()?.value === ",") {
+                //error
+              } else {
+                operator = this.consume()?.value;
+              }
+              let token = this.tokenizer.getTokenLeftLine();
+              if (token) {
+                if (token.length > 1) {
+                  right = this.parseBinaryExpression();
+                } else {
+                  value = this.consume();
+                }
               }
               break;
             default:
-            // another error only operators should be next, don't you think so too?
           }
           break;
-        case TokenType.StringLiteral:
-          if (
-            this.tokenizer.getCurrentToken()?.value === "+" ||
-            this.tokenizer.getCurrentToken()?.value === ","
-          ) {
-            operator = "+"; // dynamically replace , to + for strings as this is a syntax in my lang such that l b = "i am cool" , "Yes" concats the strings
-            this.consume();
-            let token = this.tokenizer.getTokenLeftLine();
-            if (token) {
-              if (token.length > 1) {
-                right = this.parseBinaryExpression();
-              } else {
-                value = this.consume();
-              }
-            }
-          } else {
-            // error, almost everywhere an error exists i have to check whether they defined smth first
-          }
       }
     }
     if (operator !== void 0 && right !== void 0) {
@@ -150,7 +175,7 @@ export class Parser {
       }
     }
     return {
-      type: ASTNodeType.NotExpression,
+      type: ASTNodeType.Expression,
       value: initializer,
     };
   }
@@ -158,27 +183,31 @@ export class Parser {
     this.tokenizer.next();
     let identifier;
     let initializer;
-    if (this.tokenizer.getCurrentToken()?.type === TokenType.Identifier) {
+    if (this.expectToken(TokenType.Identifier)) {
       identifier = this.consume()?.value;
       //this check is used to know whether it's just a plain declaration, without any value initialised in the variable
-      if (this.tokenizer.getTokenLeftLine()?.length === 0) {
+      if (
+        this.expectToken(TokenType.EOF) ||
+        this.expectToken(TokenType.NewLine) ||
+        this.expectTokenVal(";")
+      ) {
+        this.consume();
         return {
           type: ASTNodeType.VariableDeclaration,
           identifier,
         };
       }
-
       // here it is declaration and initialisation, so i have to check the type of value on the other side
       // to know how to go about parsing
-      if (this.tokenizer.getCurrentToken()?.value === tokens.assign) {
+      if (this.expectTokenVal(tokens.assign)) {
         this.consume();
         const leftTokenValues = this.tokenizer
           .getTokenLeftLine()
-          ?.map((t) => t.value);
-        switch (this.tokenizer.getCurrentToken()?.type) {
+          .map((t) => t.value);
+        switch (this.tokenizer.getCurrentToken().type) {
           case TokenType.Identifier:
             //todo
-            if (leftTokenValues?.length === 0) {
+            if (leftTokenValues.length === 1) {
               initializer = this.parseLiteral();
             } else {
               if (
@@ -191,7 +220,7 @@ export class Parser {
             break;
           case TokenType.Literal:
             //todo
-            if (leftTokenValues?.length === 0) {
+            if (leftTokenValues.length === 1) {
               initializer = this.parseLiteral();
             } else {
               initializer = this.parseBinaryExpression();
@@ -199,7 +228,10 @@ export class Parser {
             break;
           case TokenType.StringLiteral:
             //todo
-            if (leftTokenValues?.length === 0) {
+            if (
+              leftTokenValues.length === 1 ||
+              this.expectPeek(TokenType.NewLine)
+            ) {
               initializer = this.parseLiteral();
             } else {
               initializer = this.parseBinaryExpression();
@@ -223,6 +255,11 @@ export class Parser {
               // another error, fallthrough
             }
           default:
+            this.errors.push(
+              `Unexpected token: ${
+                this.tokenizer.getCurrentToken()?.value
+              } at variable initialization for ${identifier}`
+            );
           // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
         }
         return {
@@ -230,18 +267,93 @@ export class Parser {
           identifier,
           initializer,
         };
+      } else {
+        this.errors.push(
+          `Unexpected token: ${
+            this.tokenizer.getCurrentToken()?.value
+          } at variable initialization for ${identifier}`
+        );
+        this.consume();
+      }
+    } else {
+      this.errors.push(
+        `Unexpected token: ${
+          this.tokenizer.getCurrentToken()?.value
+        } at variable declaration`
+      );
+      this.consume();
+    }
+  }
+  parseDefine() {
+    if (this.expectPeek(TokenType.Identifier)) {
+      this.consume();
+      let identifier = this.consume().value;
+      let initializer;
+      if (this.expectTokenVal("-")) {
+        this.consume();
+        if (this.expectTokenVal(tokens.grT)) {
+          this.consume();
+          initializer = this.parseLiteral();
+        }
+      }
+      this.defines.set(identifier, initializer.value)
+      return {
+        type: ASTNodeType.DefDecl,
+        identifier,
+        initializer,
+      };
+    } else {
+      this.errors.push(
+        `Unexpected token type: ${
+          this.tokenizer.peek().value
+        }, expected an identifier`
+      );
+    }
+  }
+  parseReturn(){
+    if (this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") || this.expectPeekVal("}")){
+       let rtToken = this.consume();
+       if(this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") || this.expectTokenVal("}")){
+        this.consume()
+      }
+       return {
+        type: ASTNodeType.Return,
+        value: rtToken.value
+       }
+    }else{
+      if (this.expectPeek(TokenType.Identifier) || this.expectPeek(TokenType.Literal) || this.expectPeek(TokenType.StringLiteral) ){
+        let rtToken = this.consume();
+        let isIdentifier = this.expectToken(TokenType.Identifier);
+        const tk = this.consume();
+        if(this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") || this.expectTokenVal("}")){
+          this.consume()
+        }
+        return {
+          type: ASTNodeType.Return,
+          initializer: {
+            type: isIdentifier ? ASTNodeType.Identifier : ASTNodeType.Literal,
+            value:tk.value
+          }
+        }
       }
     }
   }
   checkAndParse() {
     let baseToken = this.tokenizer.getCurrentToken();
-    switch (baseToken?.type) {
+    switch (baseToken.type) {
       case TokenType.Keyword:
         switch (baseToken.value) {
           case tokens.l:
-            let node = this.parseVariable();
-            node && this.nodes.push(node);
+            let nodeV = this.parseVariable();
+            nodeV && this.nodes.push(nodeV);
             break;
+          case "def":
+            let nodeD = this.parseDefine();
+            nodeD && this.nodes.push(nodeD);
+            break;
+          case "return":  
+            let nodeR = this.parseReturn();
+            nodeR && this.nodes.push(nodeR)
           default:
           //hehe
         }
@@ -254,14 +366,18 @@ export class Parser {
   start() {
     // currently this.checkAndParse only executes line statements not blocks,
     //todo figure out how i'd do it with blocks
-    for (let i = 0; i < this.tokenizer.lines.length; i++) {
+    //just figured how to handle block statements, i keep track of the line the block ends. i'd keep a variable to know also if we in block
+    //
+    //this.checkAndParse();
+    while (this.tokenizer.getCurrentToken().type !== TokenType.EOF) {
       this.checkAndParse();
     }
   }
 }
 
-const p = new Parser(
-  "l b = 'my string'\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'"
-);
+// const p = new Parser(
+//   "l b\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = ob == 'lol'"
+// );
+const p = new Parser("l b = 'Hey'\nl c\nl y = 'Why?'\nreturn ;");
 p.start();
-console.log(p.nodes);
+console.log(p.nodes, p.errors);

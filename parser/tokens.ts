@@ -25,22 +25,46 @@ export const tokens = {
   oror: "||",
   andand: "&&",
   not: "!",
-  nullC:"??",
-  equality:"==",
-  inEqualty:"!=",
-  subEql:"-=",
-  addEql:"+=",
-  mulEql:"*=",
-  divEql:"/=",
-  inc:"++",
-  dec:"--",
-  exp:"**",
+  nullC: "??",
+  equality: "==",
+  inEqualty: "!=",
+  subEql: "-=",
+  addEql: "+=",
+  mulEql: "*=",
+  divEql: "/=",
+  inc: "++",
+  dec: "--",
+  exp: "**",
   ororEql: "||=",
-  andandEql:"&&="
+  andandEql: "&&=",
+  grTEql: ">=",
+  lsTEql: "<=",
+  pow: "^",
 };
+export const opToks = [
+  tokens.nullC,
+  tokens.oror,
+  tokens.andand,
+  tokens.equality,
+  tokens.inEqualty,
+  tokens.lsT,
+  tokens.grT,
+  tokens.lsTEql,
+  tokens.grTEql,
+  tokens.add,
+  tokens.sub,
+  tokens.mul,
+  tokens.div,
+  tokens.pow,
+  tokens.inc,
+  tokens.dec,
+  tokens.rem,
+  tokens.shL,
+  tokens.shR,
+];
 const keywords = [
   "l", // custom: like 'let'
-  "define", // custom
+  "def", // custom
   "defer",
   "f", // custom: like 'function'
   "for", // custom & JavaScript
@@ -88,6 +112,8 @@ export enum TokenType {
   Whitespace,
   Punctuation,
   SingleLineComment,
+  NewLine,
+  EOF,
   Unknown,
 }
 
@@ -110,6 +136,22 @@ function tokenize(line: string) {
   let sOpen = false;
   //loop through each and every character to scan them depending on how they are
   for (let i = 0; i < line.length; i++) {
+    const nextChar = line[i + 1] || "";
+
+    // Detect Windows-style newline \r\n
+    if (line[i] === "\r" && nextChar === "\n") {
+      tokens.push({ type: TokenType.NewLine, value: "\r\n" });
+      i++; // Skip the \n part of \r\n
+      currentToken = ""; // Clear currentToken if needed for new lines
+      continue;
+    } 
+    // Detect Mac-style \r and Unix-style \n newlines individually
+    else if (line[i] === "\r" || line[i] === "\n") {
+      tokens.push({ type: TokenType.NewLine, value: line[i] });
+      currentToken = "";
+      continue;
+    }
+   
     // this checks if it's a string quote character, controls the value of sOpen
     // notice how we also make sure we are not in a comment by checking the type
     if (
@@ -137,13 +179,13 @@ function tokenize(line: string) {
     }
     // keep adding every character as a comment, but since we only expect a line this is fine as it continues to the end of the line
     //keep adding string characters until sOpen is false, i.e it's closed with the ending quotechar
-    if (sOpen || (currentType === TokenType.SingleLineComment)) {
+    if (sOpen || currentType === TokenType.SingleLineComment) {
       currentToken += line[i];
       //start other tests, first for identifiers and keywords, notice you'd always see...
       // !sOpen && currentType !== TokenType.SingleLineComment, to make sure the code in the
       // block doesn't run when a string is open or when a comment is on
-    } 
-     if (
+    }
+    if (
       /[a-zA-Z_@]/.test(line[i]) &&
       !sOpen &&
       currentType !== TokenType.SingleLineComment
@@ -277,239 +319,167 @@ function tokenize(line: string) {
     }
   }
   if (currentToken !== "") {
+    if (currentType === TokenType.Identifier && isKeyword(currentToken)){
+      currentType = TokenType.Keyword
+    }
     tokens.push({ type: currentType, value: currentToken });
   }
+  tokens.push({type: TokenType.EOF, value:""})
   return tokens.filter((t) => t.type !== TokenType.Whitespace);
 }
 
-//with this log test, i have successfully defeated A.I
-//console.log(tokenize("l bed = false"))
-//console.log(tokenize("l c = 'Heyo' ^ //(4,3)"), tokenizeLine("l c= 'Heyo' ^ //(4,3)"));
 
-//original tokenize function, written by me and AIs worked together, but a bug was there so i wrote tokenize all by myself from scratch
-export function tokenizeLine(line: string): Token[] {
-  const tokens: Token[] = [];
-  let currentToken = "";
-  let currentState = TokenType.Identifier;
-  let isStringLiteral = false;
-  let quoteChar: string | null = null;
-
-  const pushToken = (type: TokenType) => {
-    if (currentToken) {
-      if (type === TokenType.Identifier && isKeyword(currentToken)) {
-        tokens.push({ type: TokenType.Keyword, value: currentToken });
-      } else {
-        tokens.push({ type, value: currentToken });
-      }
-      currentToken = "";
-    }
-  };
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === "/" && line[i + 1] === "/") {
-      // Push any token before the comment
-      pushToken(currentState);
-      // Capture the rest of the line as a single comment token
-      tokens.push({ type: TokenType.SingleLineComment, value: line.slice(i) });
-      break; // Stop processing the rest of the line
-    }
-    switch (currentState) {
-      case TokenType.Identifier:
-        if (/[a-zA-Z_@]/.test(char)) {
-          currentToken += char;
-        } else {
-          pushToken(TokenType.Identifier);
-          if (/\d/.test(char)) {
-            currentState = TokenType.Literal;
-            currentToken += char;
-          } else if (/[+*/%=<>&|!?-]/.test(char)) {
-            currentState = TokenType.Operator;
-            currentToken += char;
-          } else if (char === '"' || char === "'") {
-            currentState = TokenType.StringLiteral;
-            isStringLiteral = true;
-            quoteChar = char;
-            currentToken += char;
-          } else if (/\s/.test(char)) {
-            currentState = TokenType.Whitespace;
-            currentToken += char;
-          } else if (/[(){}[\]:;,.]/.test(char)) {
-            currentToken += char;
-            pushToken(TokenType.Punctuation);
-            currentState = TokenType.Identifier;
-          } else {
-            currentState = TokenType.Unknown;
-            currentToken += char;
-          }
-        }
-        break;
-
-      case TokenType.Operator:
-        if (/[+*/%=<>&|!?-]/.test(char)) {
-          currentToken += char; // Handle multi-character operators
-        } else {
-          pushToken(TokenType.Operator);
-          currentState = TokenType.Identifier;
-          i--; // Reprocess this character
-        }
-        break;
-
-      case TokenType.Literal:
-        if (/\d/.test(char) || char === ".") {
-          currentToken += char; // Handle numbers and decimal points
-        } else {
-          pushToken(TokenType.Literal);
-          if (/[+*/%=<>&|!?-]/.test(char)) {
-            currentState = TokenType.Operator;
-            currentToken += char; // Start a new operator
-          } else if (/[(){}[\]:;,.]/.test(char)) {
-            currentState = TokenType.Punctuation;
-            currentToken += char;
-          } else {
-            currentState = TokenType.Identifier;
-            i--; // Reprocess non-literal character
-          }
-        }
-        break;
-
-      case TokenType.StringLiteral:
-        currentToken += char;
-        if (char === quoteChar && !isEscaped(line, i)) {
-          pushToken(TokenType.StringLiteral);
-          currentState = TokenType.Identifier;
-          isStringLiteral = false;
-        }
-        break;
-
-      case TokenType.Whitespace:
-        if (/\s/.test(char)) {
-          currentToken += char;
-        } else {
-          pushToken(TokenType.Whitespace);
-          currentState = TokenType.Identifier;
-          i--; // Reprocess non-whitespace character
-        }
-        break;
-
-      case TokenType.Unknown:
-        currentToken += char;
-        break;
-    }
-  }
-
-  // Handle last token
-  if (isStringLiteral) {
-    pushToken(TokenType.StringLiteral);
-  } else {
-    pushToken(currentState);
-  }
-
-  return tokens.filter((t) => t.type !== TokenType.Whitespace);
-}
-function isEscaped(line: string, index: number): boolean {
-  if (index === 0) return false;
-  return line[index - 1] === "\\";
-}
 export class TokenGen {
   tokenizeLine: (line: string) => Token[];
   lines: string[];
   currentLine: number;
+  tokens:Token[];
   currentTokenNo: number;
   constructor(file: string) {
     this.tokenizeLine = tokenize;
     this.lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
+    this.tokens = this.tokenizeLine(file)
     this.currentLine = 0;
     this.currentTokenNo = 0;
   }
   next(): void {
-    let currentLineToken = this.tokenizeLine(this.lines[this.currentLine]);
-    // figuring out the right array indexing
-    if (this.currentTokenNo < currentLineToken.length - 1) {
+    if (this.tokens[this.currentTokenNo].type !== TokenType.EOF){
       this.currentTokenNo++;
-    } else {
-      if (this.currentLine < this.lines.length - 1) {
-        this.currentTokenNo = 0;
-        this.currentLine++;
-      }
     }
+    // let currentLineToken = this.tokenizeLine(this.lines[this.currentLine]);
+    // // figuring out the right array indexing
+    // if (this.currentTokenNo < currentLineToken.length - 1) {
+    //   this.currentTokenNo++;
+    // } else {
+    //   if (this.currentLine < this.lines.length - 1) {
+    //     this.currentTokenNo = 0;
+    //     this.currentLine++;
+    //   }
+    // }
   }
   back() {
     if (this.currentTokenNo !== 0) {
       this.currentTokenNo--;
-    } else {
-      if (this.currentLine !== 0) {
-        this.currentLine--;
-        let currentLineToken = this.tokenizeLine(this.lines[this.currentLine]);
-        this.currentTokenNo = currentLineToken.length - 1;
-      }
-    }
+    } 
+    // else {
+    //   if (this.currentLine !== 0) {
+    //     this.currentLine--;
+    //     let currentLineToken = this.tokenizeLine(this.lines[this.currentLine]);
+    //     this.currentTokenNo = currentLineToken.length - 1;
+    //   }
+    // }
   }
   peek(steps?: number): Token {
-    let token;
-    if (steps) {
-      for (let i = 0; i < steps; i++) {
-        this.next();
-      }
-      token = this.getCurrentToken();
-      for (let i = 0; i < steps; i++) {
-        this.back();
-      }
-      return token;
-    } else {
-      this.next();
-      token = this.getCurrentToken();
-      this.back();
-      return token;
+    if(steps && (steps + 1 + this.currentTokenNo) < this.tokens.length){
+      return this.tokens[steps + 1 + this.currentTokenNo]
+    }else{
+      return this.tokens[this.currentTokenNo+1]
     }
+    // let token;
+    // if (steps) {
+    //   for (let i = 0; i < steps; i++) {
+    //     this.next();
+    //   }
+    //   token = this.getCurrentToken();
+    //   for (let i = 0; i < steps; i++) {
+    //     this.back();
+    //   }
+    //   return token;
+    // } else {
+    //   this.next();
+    //   token = this.getCurrentToken();
+    //   this.back();
+    //   return token;
+    // }
   }
   skip(steps?: number) {
-    let token;
-    if (steps) {
-      for (let i = 0; i < steps; i++) {
-        this.next();
-      }
-      token = this.getCurrentToken();
-      return token;
-    } else {
-      this.next();
-      token = this.getCurrentToken();
-      return token;
+    if(steps && (steps + this.currentTokenNo) < this.tokens.length){
+      this.currentTokenNo += steps
+      return this.tokens[this.currentTokenNo]
+    }else{
+      this.currentTokenNo++
+      return this.tokens[this.currentTokenNo]
     }
+    // let token;
+    // if (steps) {
+    //   for (let i = 0; i < steps; i++) {
+    //     this.next();
+    //   }
+    //   token = this.getCurrentToken();
+    //   return token;
+    // } else {
+    //   this.next();
+    //   token = this.getCurrentToken();
+    //   return token;
+    // }
   }
   getCurrentToken() {
-    if (
-      this.currentLine > this.lines.length ||
-      this.currentLine < 0 ||
-      this.lines[this.currentLine] === void 0
-    ) {
-      return void 0;
-    }
-    return this.tokenizeLine(this.lines[this.currentLine])[this.currentTokenNo];
+    return this.tokens[this.currentTokenNo]
+    // if (
+    //   this.currentLine > this.lines.length ||
+    //   this.currentLine < 0 ||
+    //   this.lines[this.currentLine] === void 0
+    // ) {
+    //   return void 0;
+    // }
+    // return this.tokenizeLine(this.lines[this.currentLine])[this.currentTokenNo];
   }
   getRemainingToken() {
-    let tokensLeft: Token[] = this.tokenizeLine(
-      this.lines[this.currentLine]
-    ).slice(this.currentTokenNo + 1);
-    let linesLeft = this.lines.slice(this.currentLine + 1);
-    for (let i = 0; i < linesLeft.length; i++) {
-      let lineTokens = this.tokenizeLine(linesLeft[i]);
-      tokensLeft.push(...lineTokens);
-    }
-    return tokensLeft;
+    let tokensLeft: Token[] = this.tokens.slice(this.currentTokenNo + 1);
+    return tokensLeft
+    // let tokensLeft: Token[] = this.tokenizeLine(
+    //   this.lines[this.currentLine]
+    // ).slice(this.currentTokenNo + 1);
+    // let linesLeft = this.lines.slice(this.currentLine + 1);
+    // for (let i = 0; i < linesLeft.length; i++) {
+    //   let lineTokens = this.tokenizeLine(linesLeft[i]);
+    //   tokensLeft.push(...lineTokens);
+    // }
+    // return tokensLeft;
   }
   getTokenLeftLine() {
-    if (this.lines[this.currentLine]) {
-      return this.tokenizeLine(this.lines[this.currentLine]).slice(
-        this.currentTokenNo + 1
-      );
+    let leftTokens = this.getRemainingToken();
+    let leftLineToken:Token[] = []
+    for (let i = 0; i < leftTokens.length; i++){
+      if(leftTokens[i].type === TokenType.NewLine){
+        leftLineToken.push(leftTokens[i]);
+        break;
+      }
+      leftLineToken.push(leftTokens[i]);
     }
+    if (this.getCurrentToken().type === TokenType.NewLine){
+      leftLineToken = [this.getCurrentToken()]
+    }
+    return leftLineToken
+    // if (this.lines[this.currentLine]) {
+    //   return this.tokenizeLine(this.lines[this.currentLine]).slice(
+    //     this.currentTokenNo + 1
+    //   );
+    // }else{
+    //   return []
+    // }
   }
   getFullLineToken() {
-    return this.tokenizeLine(this.lines[this.currentLine]);
+    let flToken:Token[] = [];
+    for (let i = this.currentTokenNo; this.tokens[i].type != TokenType.NewLine; i--){
+      flToken.push(this.tokens[i])
+    }
+    flToken.reverse()
+    flToken.push(...this.getTokenLeftLine())
+    return flToken;
+    //return this.tokenizeLine(this.lines[this.currentLine]);
   }
 }
-// if (currentType === TokenType.SingleLineComment) {
-    //   currentToken += line[i];
-    // }
+
+// const tg = new TokenGen("l b = 'Hey'\nl c\nl y = 'Why?'\ndef");
+// console.log(tg.tokens)
+// let file =  Deno.readTextFileSync(Deno.args[0])
+//const tg = tokenize("file")
+// tg.next()
+// tg.next()
+// tg.next()
+// tg.next()
+ //console.log(tg)
+// const tg = new TokenGen("l b = 'my string'\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = 2 == 8")
+// //tg.skip(35)
+// console.log( tg.getTokenLeftLine(),tg.peek(5))
