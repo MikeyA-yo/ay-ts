@@ -469,10 +469,21 @@ export class TokenGen {
     return flToken;
     //return this.tokenizeLine(this.lines[this.currentLine]);
   }
+  toNewLine(){
+    const leftTokens = this.getRemainingToken()
+    for (let i = 0; i < leftTokens.length; i++){
+      this.next()
+      if(leftTokens[i].type === TokenType.NewLine){
+        this.next()
+        break
+      }
+    }
+  }
 }
 
-// const tg = new TokenGen("l b = 'Hey'\nl c\nl y = 'Why?'\ndef");
-// console.log(tg.tokens)
+// const tg = new TokenGen("l b= 'Hey'\nl c\nl y = 'Why?'\ndef");
+// tg.toNewLine()
+// console.log(tg.getCurrentToken())
 // let file =  Deno.readTextFileSync(Deno.args[0])
 //const tg = tokenize("file")
 // tg.next()

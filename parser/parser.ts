@@ -3,7 +3,6 @@ import { opToks, TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
-  // defines: {[key: string]};
   private tokenizer: TokenGen;
   nodes: ASTNode[];
   parens: string[];
@@ -19,7 +18,7 @@ export class Parser {
     this.bracs = [];
     this.vars = [];
     this.errors = [];
-    this.defines = new Map()
+    this.defines = new Map();
   }
   consume() {
     const token = this.tokenizer.getCurrentToken();
@@ -94,7 +93,9 @@ export class Parser {
   }
   parseLiteral(): ASTNode {
     const token = this.consume();
-    if (this.expectToken(TokenType.NewLine) || this.expectToken(TokenType.EOF)) {
+    if (
+      this.expectToken(TokenType.NewLine) || this.expectToken(TokenType.EOF)
+    ) {
       this.consume();
     }
     return {
@@ -240,7 +241,7 @@ export class Parser {
           case TokenType.Punctuation:
             //todo
             initializer = this.groupBy(
-              this.tokenizer.getCurrentToken()?.value ?? "("
+              this.tokenizer.getCurrentToken()?.value ?? "(",
             );
             break;
           case TokenType.Operator:
@@ -256,11 +257,10 @@ export class Parser {
             }
           default:
             this.errors.push(
-              `Unexpected token: ${
-                this.tokenizer.getCurrentToken()?.value
-              } at variable initialization for ${identifier}`
+              `Unexpected token: ${this.tokenizer.getCurrentToken()?.value} at variable initialization for ${identifier}`,
             );
-          // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
+            this.tokenizer.toNewLine()
+            // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
         }
         return {
           type: ASTNodeType.VariableDeclaration,
@@ -269,19 +269,17 @@ export class Parser {
         };
       } else {
         this.errors.push(
-          `Unexpected token: ${
-            this.tokenizer.getCurrentToken()?.value
-          } at variable initialization for ${identifier}`
+          `Unexpected token: ${this.tokenizer.getCurrentToken()?.value} at variable initialization for ${identifier}`,
         );
         this.consume();
+        this.tokenizer.toNewLine()
       }
     } else {
       this.errors.push(
-        `Unexpected token: ${
-          this.tokenizer.getCurrentToken()?.value
-        } at variable declaration`
+        `Unexpected token: ${this.tokenizer.getCurrentToken()?.value} at variable declaration`,
       );
       this.consume();
+      this.tokenizer.toNewLine()
     }
   }
   parseDefine() {
@@ -296,7 +294,7 @@ export class Parser {
           initializer = this.parseLiteral();
         }
       }
-      this.defines.set(identifier, initializer.value)
+      this.defines.set(identifier, initializer.value);
       return {
         type: ASTNodeType.DefDecl,
         identifier,
@@ -304,38 +302,85 @@ export class Parser {
       };
     } else {
       this.errors.push(
-        `Unexpected token type: ${
-          this.tokenizer.peek().value
-        }, expected an identifier`
+        `Unexpected token type: ${this.tokenizer.peek().value}, expected an identifier`,
       );
+      this.tokenizer.toNewLine()
     }
   }
-  parseReturn(){
-    if (this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") || this.expectPeekVal("}")){
-       let rtToken = this.consume();
-       if(this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") || this.expectTokenVal("}")){
-        this.consume()
+  parseReturn() {
+    if (
+      this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") ||
+      this.expectPeekVal("}")
+    ) {
+      let rtToken = this.consume();
+      if (
+        this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") ||
+        this.expectTokenVal("}")
+      ) {
+        this.consume();
+        if(this.expectToken(TokenType.EOF) || this.expectToken(TokenType.NewLine)){
+          this.consume()
+        }
       }
-       return {
+      return {
         type: ASTNodeType.Return,
-        value: rtToken.value
-       }
-    }else{
-      if (this.expectPeek(TokenType.Identifier) || this.expectPeek(TokenType.Literal) || this.expectPeek(TokenType.StringLiteral) ){
+        value: rtToken.value,
+      };
+    } else {
+      if (
+        this.expectPeek(TokenType.Identifier) ||
+        this.expectPeek(TokenType.Literal) ||
+        this.expectPeek(TokenType.StringLiteral)
+      ) {
         let rtToken = this.consume();
         let isIdentifier = this.expectToken(TokenType.Identifier);
         const tk = this.consume();
-        if(this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") || this.expectTokenVal("}")){
-          this.consume()
+        if (
+          this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") ||
+          this.expectTokenVal("}")
+        ) {
+          this.consume();
+          if(this.expectToken(TokenType.EOF) || this.expectToken(TokenType.NewLine)){
+            this.consume()
+          }
         }
         return {
           type: ASTNodeType.Return,
           initializer: {
             type: isIdentifier ? ASTNodeType.Identifier : ASTNodeType.Literal,
-            value:tk.value
-          }
+            value: tk.value,
+          },
+        };
+      }
+    }
+  }
+  parseBreakNCont(){
+    if (
+      this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") ||
+      this.expectPeekVal("}")
+    ) {
+      let rtToken = this.consume();
+      if (
+        this.expectToken(TokenType.NewLine) || this.expectTokenVal(";") ||
+        this.expectTokenVal("}")
+      ) {
+        this.consume();
+        if(this.expectToken(TokenType.EOF) || this.expectToken(TokenType.NewLine)){
+          this.consume()
         }
       }
+      return {
+        type: ASTNodeType.Return,
+        value: rtToken.value,
+      };
+    }else{
+      let rtToken = this.consume();
+      this.errors.push(`Unexpected token after ${rtToken.value} keyword: ${this.tokenizer.getCurrentToken() ? this.tokenizer.getCurrentToken().value : "End of file"}`);
+      this.tokenizer.toNewLine()
+      return {
+        type: ASTNodeType.Return,
+        value: rtToken.value,
+      };
     }
   }
   checkAndParse() {
@@ -351,16 +396,23 @@ export class Parser {
             let nodeD = this.parseDefine();
             nodeD && this.nodes.push(nodeD);
             break;
-          case "return":  
+          case "return":
             let nodeR = this.parseReturn();
-            nodeR && this.nodes.push(nodeR)
+            nodeR && this.nodes.push(nodeR);
+            break;
+          case "break":
+          case "continue":  
+            let nodeBC = this.parseBreakNCont();
+            nodeBC && this.nodes.push(nodeBC);
+            break;
           default:
-          //hehe
+            //hehe
         }
         break;
-
+      case TokenType.NewLine:
+        this.tokenizer.next();
       default:
-      //Syntax Error Likely
+        //Syntax Error Likely
     }
   }
   start() {
@@ -378,6 +430,6 @@ export class Parser {
 // const p = new Parser(
 //   "l b\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = ob == 'lol'"
 // );
-const p = new Parser("l b = 'Hey'\nl c\nl y = 'Why?'\nreturn ;");
+const p = new Parser("l b = 'Hey'\nl c\nl y = 'Why?'\nreturn;\nbreak;\ncontinue;");
 p.start();
 console.log(p.nodes, p.errors);
