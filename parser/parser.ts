@@ -61,6 +61,9 @@ export class Parser {
   }
   expectPeek(t: TokenType) {
     let pk = this.tokenizer.peek();
+    if (!pk){
+      return pk
+    }
     if (pk.type === t) {
       return true;
     } else {
@@ -184,6 +187,33 @@ export class Parser {
       value: initializer,
     };
   }
+  parseExpression(){
+    let left = this.consume().value;
+    let right;
+    let op;
+    if (this.expectToken(TokenType.Operator)){
+      op = this.consume().value;
+      if (this.expectPeek(TokenType.EOF)|| this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") || this.expectPeekVal(")")){
+        right = this.consume().value
+        this.consume()
+        return {
+          operator:op,
+          left,
+          right
+        }
+      }else {
+        right = this.parseExpression()
+      }
+    }
+    return {
+      operator:op,
+      left,
+      right
+    }
+  }
+  parseParenExpr(){
+
+  }
   parseVariable() {
     this.tokenizer.next();
     let identifier;
@@ -245,7 +275,7 @@ export class Parser {
               let bL = this.nodes.length;
               this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
             } else {
-              initializer = this.parseBinaryExpression();
+              initializer = this.parseExpression();
             }
             break;
           case TokenType.StringLiteral:
@@ -264,9 +294,9 @@ export class Parser {
             break;
           case TokenType.Punctuation:
             //todo
-            initializer = this.groupBy(
-              this.tokenizer.getCurrentToken()?.value ?? "("
-            );
+            // initializer = this.groupBy(
+            //   this.tokenizer.getCurrentToken()?.value ?? "("
+            // );
             break;
           case TokenType.Operator:
             if (
@@ -463,7 +493,10 @@ export class Parser {
         break;
       case TokenType.NewLine:
         this.tokenizer.next();
+        break;
       default:
+        this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+        this.tokenizer.next()
       //Syntax Error Likely
     }
   }
@@ -481,6 +514,6 @@ export class Parser {
 // const p = new Parser(
 //   "l b\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = ob == 'lol'"
 // );
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nreturn;\nbreak;\ncontinue;");
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = 7 + 5 ^ 7;\n");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
