@@ -61,8 +61,8 @@ export class Parser {
   }
   expectPeek(t: TokenType) {
     let pk = this.tokenizer.peek();
-    if (!pk){
-      return pk
+    if (!pk) {
+      return false;
     }
     if (pk.type === t) {
       return true;
@@ -72,6 +72,9 @@ export class Parser {
   }
   expectToken(t: TokenType) {
     let tk = this.tokenizer.getCurrentToken();
+    if (!tk) {
+      return false;
+    }
     if (tk.type === t) {
       return true;
     } else {
@@ -80,6 +83,9 @@ export class Parser {
   }
   expectPeekVal(v: string) {
     let pk = this.tokenizer.peek();
+    if (!pk) {
+      return false;
+    }
     if (pk.value === v) {
       return true;
     } else {
@@ -88,6 +94,9 @@ export class Parser {
   }
   expectTokenVal(v: string) {
     let tk = this.tokenizer.getCurrentToken();
+    if (!tk) {
+      return false;
+    }
     if (tk.value === v) {
       return true;
     } else {
@@ -189,7 +198,7 @@ export class Parser {
   }
   parseExpression() {
     let left;
-    
+
     if (this.expectTokenVal("(")) {
       // Handle parenthesized expressions
       left = this.parseParenExpr();
@@ -197,11 +206,11 @@ export class Parser {
       // Consume basic literals/identifiers
       left = this.consume().value;
     }
-    
+
     // Check if there’s an operator next
     if (this.expectToken(TokenType.Operator)) {
       const op = this.consume().value;
-      
+
       // Handle the right-hand side of the expression
       let right;
       if (
@@ -211,38 +220,40 @@ export class Parser {
         this.expectPeekVal(")")
       ) {
         right = this.consume().value; // Simple right-hand expression
-        if (this.expectPeek(TokenType.EOF) ||
-        this.expectPeek(TokenType.NewLine) ||
-        this.expectPeekVal(";") ){
-          this.consume()
+        if (
+          this.expectPeek(TokenType.EOF) ||
+          this.expectPeek(TokenType.NewLine) ||
+          this.expectPeekVal(";")
+        ) {
+          this.consume();
         }
       } else {
         right = this.parseExpression(); // Recursively parse complex expressions
       }
-      
+
       return {
         operator: op,
         left,
         right,
       };
     }
-    
+
     return left; // Return single values if no operator is present
   }
-  
+
   parseParenExpr() {
     this.consume(); // Consume the opening '('
     const expression = this.parseExpression(); // Parse the inner expression
-    
+
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
-      throw new Error("Unmatched parentheses!");
+      this.errors.push("Unmatched parentheses!");
     }
-    
-    return {paren: expression}; // Return the parsed inner expression
+
+    return { paren: expression }; // Return the parsed inner expression
   }
-  
+
   parseVariable() {
     this.tokenizer.next();
     let identifier;
@@ -323,7 +334,7 @@ export class Parser {
             break;
           case TokenType.Punctuation:
             //todo
-            initializer = this.parseExpression()
+            initializer = this.parseExpression();
             // initializer = this.groupBy(
             //   this.tokenizer.getCurrentToken()?.value ?? "("
             // );
@@ -521,12 +532,20 @@ export class Parser {
           //hehe
         }
         break;
+      case TokenType.Punctuation:
+        if (baseToken.value === ";"){
+          this.tokenizer.next();
+        } else {
+          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.tokenizer.next();
+        } 
+        break;
       case TokenType.NewLine:
         this.tokenizer.next();
         break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
-        this.tokenizer.next()
+        this.tokenizer.next();
       //Syntax Error Likely
     }
   }
@@ -541,7 +560,6 @@ export class Parser {
   }
 }
 
-
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = (7 + (2 - 8)) - 5;\n");
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = 5 * 2");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
