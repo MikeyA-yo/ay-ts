@@ -187,41 +187,62 @@ export class Parser {
       value: initializer,
     };
   }
-  parseExpression(){
+  parseExpression() {
     let left;
-    if (this.expectTokenVal("(")){
-      left = this.parseParenExpr()
-    }else{
+    
+    if (this.expectTokenVal("(")) {
+      // Handle parenthesized expressions
+      left = this.parseParenExpr();
+    } else {
+      // Consume basic literals/identifiers
       left = this.consume().value;
     }
     
-    let right;
-    let op;
-    if (this.expectToken(TokenType.Operator)){
-      op = this.consume().value;
-      if (this.expectPeek(TokenType.EOF)|| this.expectPeek(TokenType.NewLine) || this.expectPeekVal(";") || this.expectPeekVal(")")){
-        right = this.consume().value
-        this.consume()
-        return {
-          operator:op,
-          left,
-          right
+    // Check if there’s an operator next
+    if (this.expectToken(TokenType.Operator)) {
+      const op = this.consume().value;
+      
+      // Handle the right-hand side of the expression
+      let right;
+      if (
+        this.expectPeek(TokenType.EOF) ||
+        this.expectPeek(TokenType.NewLine) ||
+        this.expectPeekVal(";") ||
+        this.expectPeekVal(")")
+      ) {
+        right = this.consume().value; // Simple right-hand expression
+        if (this.expectPeek(TokenType.EOF) ||
+        this.expectPeek(TokenType.NewLine) ||
+        this.expectPeekVal(";") ){
+          this.consume()
         }
-      }else {
-        right = this.parseExpression()
+      } else {
+        right = this.parseExpression(); // Recursively parse complex expressions
       }
+      
+      return {
+        operator: op,
+        left,
+        right,
+      };
     }
-    return {
-      operator:op,
-      left,
-      right
+    
+    return left; // Return single values if no operator is present
+  }
+  
+  parseParenExpr() {
+    this.consume(); // Consume the opening '('
+    const expression = this.parseExpression(); // Parse the inner expression
+    
+    if (this.expectTokenVal(")")) {
+      this.consume(); // Consume the closing ')'
+    } else {
+      throw new Error("Unmatched parentheses!");
     }
+    
+    return {paren: expression}; // Return the parsed inner expression
   }
-  parseParenExpr(){
-    this.consume()
-    let paren = this.parseExpression();
-    return {paren}
-  }
+  
   parseVariable() {
     this.tokenizer.next();
     let identifier;
@@ -520,9 +541,7 @@ export class Parser {
   }
 }
 
-// const p = new Parser(
-//   "l b\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = ob == 'lol'"
-// );
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = (7 + 5 ) - 5\n");
+
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = (7 + (2 - 8)) - 5;\n");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
