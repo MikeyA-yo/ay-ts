@@ -188,7 +188,13 @@ export class Parser {
     };
   }
   parseExpression(){
-    let left = this.consume().value;
+    let left;
+    if (this.expectTokenVal("(")){
+      left = this.parseParenExpr()
+    }else{
+      left = this.consume().value;
+    }
+    
     let right;
     let op;
     if (this.expectToken(TokenType.Operator)){
@@ -212,7 +218,9 @@ export class Parser {
     }
   }
   parseParenExpr(){
-
+    this.consume()
+    let paren = this.parseExpression();
+    return {paren}
   }
   parseVariable() {
     this.tokenizer.next();
@@ -294,6 +302,7 @@ export class Parser {
             break;
           case TokenType.Punctuation:
             //todo
+            initializer = this.parseExpression()
             // initializer = this.groupBy(
             //   this.tokenizer.getCurrentToken()?.value ?? "("
             // );
@@ -514,6 +523,6 @@ export class Parser {
 // const p = new Parser(
 //   "l b\nl c = !b\nl bine = 3 * 3 + 7\nl bina =(7{n})\nl ob ='l','ol'\nl bool = ob == 'lol'"
 // );
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = 7 + 5 ^ 7;\n");
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl c = (7 + 5 ) - 5\n");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
