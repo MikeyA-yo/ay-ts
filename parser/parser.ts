@@ -181,14 +181,14 @@ export class Parser {
     }
   }
   parseNotnMinusExpression() {
-    let val = this.consume()?.value ?? "";
+    let val = this.consume().value;
     let initializer;
     let leftTokens = this.tokenizer.getTokenLeftLine();
     if (leftTokens) {
       if (leftTokens.length > 1) {
         //todo
       } else {
-        initializer = val + this.consume()?.value;
+        initializer = val + this.consume().value;
       }
     }
     return {
@@ -243,6 +243,10 @@ export class Parser {
 
   parseParenExpr() {
     this.consume(); // Consume the opening '('
+    // Important Error checks:
+    if(this.expectTokenVal(")")){
+      this.errors.push("Empty parentheses!");
+    }
     const expression = this.parseExpression(); // Parse the inner expression
 
     if (this.expectTokenVal(")")) {
@@ -560,6 +564,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = 5 * 2");
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = (5) * 2");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
