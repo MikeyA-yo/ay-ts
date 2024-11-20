@@ -356,10 +356,14 @@ function tokenize(line: string) {
     tokens.push({ type: currentType, value: currentToken });
   }
   tokens.push({type: TokenType.EOF, value:""})
+  //ignore whitespace token
   return tokens.filter((t) => t.type !== TokenType.Whitespace);
 }
 
-
+/**
+ * class TokenGen: 
+ * provides methods and functionalities for using and moving through tokens
+ */
 export class TokenGen {
   tokenizeLine: (line: string) => Token[];
   lines: string[];
@@ -373,40 +377,102 @@ export class TokenGen {
     this.currentLine = 0;
     this.currentTokenNo = 0;
   }
+  /**
+   * next() => token moves to the next non comment token
+   */
   next(): void {
     if (this.tokens[this.currentTokenNo].type !== TokenType.EOF){
       this.currentTokenNo++;
+      while(this.tokens[this.currentTokenNo].type === TokenType.SingleLineComment ||this.tokens[this.currentTokenNo].type === TokenType.MultiLineComment){
+        this.currentTokenNo++;
+      }
     }
   }
+  /**
+   * back() => token moves back to the next non comment token
+   */
   back() {
     if (this.currentTokenNo !== 0) {
       this.currentTokenNo--;
+      while(this.tokens[this.currentTokenNo].type === TokenType.SingleLineComment ||this.tokens[this.currentTokenNo].type === TokenType.MultiLineComment){
+        this.currentTokenNo--;
+      }
     } 
   }
+  /**
+   * Checks and returns future non comment tokens,  Does not change the current token
+   * @param steps: Number of steps to peek or look ahead.
+   * @returns the token peeked, if no steps is provided returns the next token
+   */
   peek(steps?: number): Token {
     if(steps && (steps + 1 + this.currentTokenNo) < this.tokens.length){
-      return this.tokens[steps + 1 + this.currentTokenNo]
+      let pkNo = steps + 1 + this.currentTokenNo
+      if(this.tokens[pkNo]){
+        while (this.tokens[pkNo].type === TokenType.SingleLineComment ||this.tokens[pkNo].type === TokenType.MultiLineComment){
+          if (this.tokens[pkNo + 1]){
+            pkNo++
+          }
+       }
+       return this.tokens[pkNo]
+      }else{
+        return this.getCurrentToken()
+      }
     }else{
-      return this.tokens[this.currentTokenNo+1]
+      let pkNo = this.currentTokenNo + 1
+      if(this.tokens[pkNo]){
+        while (this.tokens[pkNo].type === TokenType.SingleLineComment ||this.tokens[pkNo].type === TokenType.MultiLineComment){
+          if (this.tokens[pkNo + 1]){
+           pkNo++
+          }
+       }
+       return this.tokens[pkNo]
+      }else{
+        return this.getCurrentToken()
+      }
+      
     }
     
   }
+  /**
+   * Like next(), but optionally takes a number (steps) to move through the next token
+   * @param steps Number of tokens to skip
+   * @returns The new current token after skipping
+   */
   skip(steps?: number) {
     if(steps && (steps + this.currentTokenNo) < this.tokens.length){
       this.currentTokenNo += steps
-      return this.tokens[this.currentTokenNo]
+      if (this.tokens[this.currentTokenNo]){
+        while(this.tokens[this.currentTokenNo].type === TokenType.SingleLineComment ||this.tokens[this.currentTokenNo].type === TokenType.MultiLineComment){
+          this.currentTokenNo++;
+        }
+        return this.tokens[this.currentTokenNo]
+      }else{
+        return this.getCurrentToken()
+      }
     }else{
-      this.currentTokenNo++
-      return this.tokens[this.currentTokenNo]
+      this.next()
+      return this.getCurrentToken()
     }
   }
+  /**
+   * 
+   * @returns The current token
+   */
   getCurrentToken() {
     return this.tokens[this.currentTokenNo]
   }
+  /**
+   * 
+   * @returns An array of all the tokens left
+   */
   getRemainingToken() {
     let tokensLeft: Token[] = this.tokens.slice(this.currentTokenNo + 1);
     return tokensLeft
   }
+  /**
+   * 
+   * @returns an array of all the tokens left in a line
+   */
   getTokenLeftLine() {
     let leftTokens = this.getRemainingToken();
     let leftLineToken:Token[] = []
@@ -422,6 +488,10 @@ export class TokenGen {
     }
     return leftLineToken
   }
+  /**
+   * 
+   * @returns An array of all the tokens in the current line
+   */
   getFullLineToken() {
     let flToken:Token[] = [];
     for (let i = this.currentTokenNo; this.tokens[i].type != TokenType.NewLine; i--){
@@ -431,6 +501,9 @@ export class TokenGen {
     flToken.push(...this.getTokenLeftLine())
     return flToken;
   }
+  /**
+   * Moves the token ahead to a new line
+   */
   toNewLine(){
     const leftTokens = this.getRemainingToken()
     for (let i = 0; i < leftTokens.length; i++){
@@ -442,7 +515,3 @@ export class TokenGen {
     }
   }
 }
-
-//  const tg = new TokenGen("l b /* b*/ = 'Hey'\nl c\nl y = 'Why?'\ndef");
-// // tg.toNewLine()
-// console.log(tokenize("l b // = 'Hey'\nl y = 'Why?'\n /* multiline\n comment \n test*/\n after"))

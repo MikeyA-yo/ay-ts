@@ -85,33 +85,33 @@ export class Parser {
   isDefinedVar(v: string) {
     return this.vars.some((val) => val.val === v);
   }
+  // parseNotnMinusExpression() {
+  //   let val = this.consume().value;
+  //   let initializer = val + this.consume().value;
+  //   return initializer;
+  // }
   parseNotnMinusExpression() {
-    let val = this.consume().value;
-    let initializer = val + this.consume().value;
-    // let leftTokens = this.tokenizer.getTokenLeftLine();
-    // if (leftTokens) {
-    //   if (leftTokens.length > 1) {
-    //     //todo
-    //   } else {
-    //     initializer = val + this.consume().value;
-    //   }
-    // }
+    const operator = this.consume().value; // Consume the unary operator (! or -)
+    const operand = this.expectTokenVal("(") ? this.parseParenExpr() : this.parseExpression();
     return {
-      type: ASTNodeType.Expression,
-      value: initializer,
+      operator,
+      operand,
     };
   }
+  
   parseExpression() {
     let left;
 
     if (this.expectTokenVal("(")) {
       // Handle parenthesized expressions
       left = this.parseParenExpr();
-    } else {
+    } else if(this.expectTokenVal("!") || this.expectTokenVal("-")){
+      left = this.parseNotnMinusExpression()
+    }else {
       // Consume basic literals/identifiers
       left = this.consume().value;
     }
-
+    
     // Check if there’s an operator next
     if (this.expectToken(TokenType.Operator) || this.expectTokenVal(",")) {
       if (this.expectTokenVal(",")){
@@ -130,16 +130,14 @@ export class Parser {
       ) {
         right = this.consume().value; // Simple right-hand expression
         if (
-          this.expectPeek(TokenType.EOF) ||
-          this.expectPeek(TokenType.NewLine) ||
-          this.expectPeekVal(";")
+          !this.expectTokenVal(")")
         ) {
           this.consume();
         }
       } else {
         right = this.parseExpression(); // Recursively parse complex expressions
       }
-
+      
       return {
         operator: op,
         left,
@@ -157,13 +155,12 @@ export class Parser {
       this.errors.push("Empty parentheses!");
     }
     const expression = this.parseExpression(); // Parse the inner expression
-
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
       this.errors.push("Unmatched parentheses!");
     }
-
+   
     return { paren: expression }; // Return the parsed inner expression
   }
 
@@ -253,12 +250,13 @@ export class Parser {
             // );
             break;
           case TokenType.Operator:
+            //prefix operators
             if (
               this.tokenizer.getCurrentToken()?.value === tokens.not ||
               this.tokenizer.getCurrentToken()?.value === tokens.sub
             ) {
               //todo
-              initializer = this.parseNotnMinusExpression();
+              initializer = this.parseExpression();
               break;
             } else {
               // another error, fallthrough
@@ -472,7 +470,7 @@ export class Parser {
     }
   }
 }
-
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = 'Hey ', 'man'\n l boolexpr = 2 != x");
+// 
+const p = new Parser("l pexr = -(6 - 5) + (8*8)");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
