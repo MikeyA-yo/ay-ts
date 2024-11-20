@@ -218,7 +218,6 @@ export class Parser {
             }
             break;
           case TokenType.Literal:
-            //todo
             if (leftTokenValues.length === 1) {
               initializer = this.parseLiteral();
               dT = "number";
@@ -243,17 +242,13 @@ export class Parser {
             }
             break;
           case TokenType.Punctuation:
-            //todo
             initializer = this.parseExpression();
-            // initializer = this.groupBy(
-            //   this.tokenizer.getCurrentToken()?.value ?? "("
-            // );
             break;
           case TokenType.Operator:
             //prefix operators
             if (
-              this.tokenizer.getCurrentToken()?.value === tokens.not ||
-              this.tokenizer.getCurrentToken()?.value === tokens.sub
+              this.expectTokenVal(tokens.not) ||
+              this.expectTokenVal(tokens.sub)
             ) {
               //todo
               initializer = this.parseExpression();
@@ -261,6 +256,12 @@ export class Parser {
             } else {
               // another error, fallthrough
             }
+          case TokenType.Keyword:
+            if (this.expectTokenVal("true") || this.expectTokenVal("false")){
+              initializer = this.parseExpression() ;
+              this.vars.push({ dataType: "boolean", val: identifier, nodePos: this.nodes.length });
+            }
+            break;  
           default:
             this.errors.push(
               `Unexpected token: ${
@@ -471,6 +472,6 @@ export class Parser {
   }
 }
 // 
-const p = new Parser("l pexr = -(6 - 5) + (8*8)");
+const p = new Parser("l pexr = -(6 - 5) + -(8*8)\nl bool = true\nl myString = 'Hello, world!'");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
