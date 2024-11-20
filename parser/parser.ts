@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { opToks, TokenGen, tokens, TokenType } from "./tokens";
+import { TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
@@ -24,40 +24,6 @@ export class Parser {
     const token = this.tokenizer.getCurrentToken();
     this.tokenizer.next();
     return token;
-  }
-  private groupBy(group: string): string {
-    let mGroup = group; // Initial grouping character ('(', '[', '{')
-    const closingChar = group === "{" ? "}" : group === "[" ? "]" : ")"; // Determine the corresponding closing character
-    this.consume(); // Move past the opening group character
-
-    while (this.tokenizer.getCurrentToken()?.value !== closingChar) {
-      if (!this.tokenizer.getCurrentToken()) {
-        throw new Error(`Unmatched grouping: expected ${closingChar}`);
-      }
-
-      let currentGroup = "";
-
-      // Handle nested groups
-      const currentTokenValue = this.tokenizer.getCurrentToken()?.value;
-      if (
-        currentTokenValue === "(" ||
-        currentTokenValue === "[" ||
-        currentTokenValue === "{"
-      ) {
-        currentGroup += this.groupBy(currentTokenValue); // Recursively handle nested groups
-      } else if (currentTokenValue === "," || currentTokenValue === ";") {
-        // Handle commas or semicolons (if present) within the group
-        currentGroup += this.consume()?.value;
-      } else {
-        // Handle regular tokens (numbers, identifiers, etc.)
-        currentGroup += this.consume()?.value;
-      }
-
-      mGroup += currentGroup;
-    }
-
-    this.consume(); // Consume the closing character
-    return mGroup + closingChar;
   }
   expectPeek(t: TokenType) {
     let pk = this.tokenizer.peek();
@@ -119,78 +85,17 @@ export class Parser {
   isDefinedVar(v: string) {
     return this.vars.some((val) => val.val === v);
   }
-  parseBinaryExpression() {
-    let operator;
-    let left = {
-      type: ASTNodeType.Literal,
-      value: this.tokenizer.getCurrentToken()?.value,
-    };
-    let right;
-    let value;
-    let t = this.consume()?.type;
-    if (this.tokenizer.getTokenLeftLine()?.length !== 0) {
-      switch (t) {
-        case TokenType.Literal:
-        case TokenType.Identifier:
-        case TokenType.StringLiteral:
-          let op = this.tokenizer.getCurrentToken()?.value as string;
-          switch (true) {
-            case opToks.includes(op) ||
-              this.tokenizer.getCurrentToken()?.value === ",":
-              //todo arithmetric operations
-              if (
-                t === TokenType.StringLiteral ||
-                (t === TokenType.Identifier &&
-                  this.tokenizer.getCurrentToken()?.value === ",")
-              ) {
-                operator = "+";
-                this.consume();
-              } else if (this.tokenizer.getCurrentToken()?.value === ",") {
-                //error
-              } else {
-                operator = this.consume()?.value;
-              }
-              let token = this.tokenizer.getTokenLeftLine();
-              if (token) {
-                if (token.length > 1) {
-                  right = this.parseBinaryExpression();
-                } else {
-                  value = this.consume();
-                }
-              }
-              break;
-            default:
-          }
-          break;
-      }
-    }
-    if (operator !== void 0 && right !== void 0) {
-      return {
-        type: ASTNodeType.BinaryExpression,
-        operator,
-        left,
-        right,
-      };
-    } else {
-      return {
-        type: ASTNodeType.BinaryExpression,
-        operator,
-        left,
-        right: value,
-      };
-    }
-  }
   parseNotnMinusExpression() {
     let val = this.consume().value;
-    let initializer;
-    let leftTokens = this.tokenizer.getTokenLeftLine();
-    if (leftTokens) {
-      if (leftTokens.length > 1) {
-        //todo
-      } else {
-        initializer = val + this.consume().value;
-      }
-    }
+    let initializer = val + this.consume().value;
+    // let leftTokens = this.tokenizer.getTokenLeftLine();
+    // if (leftTokens) {
+    //   if (leftTokens.length > 1) {
+    //     //todo
+    //   } else {
+    //     initializer = val + this.consume().value;
+    //   }
+    // }
     return {
       type: ASTNodeType.Expression,
       value: initializer,
@@ -208,9 +113,13 @@ export class Parser {
     }
 
     // Check if there’s an operator next
-    if (this.expectToken(TokenType.Operator)) {
+    if (this.expectToken(TokenType.Operator) || this.expectTokenVal(",")) {
+      if (this.expectTokenVal(",")){
+        this.tokenizer.getCurrentToken().value = "+"
+        this.tokenizer.getCurrentToken().type = TokenType.Operator
+      }
       const op = this.consume().value;
-
+      
       // Handle the right-hand side of the expression
       let right;
       if (
@@ -307,7 +216,7 @@ export class Parser {
                 this.tokenizer.peek().type === TokenType.Operator ||
                 this.tokenizer.peek().value === ","
               ) {
-                initializer = this.parseBinaryExpression();
+                initializer = this.parseExpression();
               }
             }
             break;
@@ -333,7 +242,7 @@ export class Parser {
               let bL = this.nodes.length;
               this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
             } else {
-              initializer = this.parseBinaryExpression();
+              initializer = this.parseExpression();
             }
             break;
           case TokenType.Punctuation:
@@ -564,6 +473,6 @@ export class Parser {
   }
 }
 
-const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = (5) * 2");
+const p = new Parser("l b = 'Hey'\nl c\nl y = b\nl pexpr = (7 + (2 - 8)) - 5;\nl expr = 'Hey ', 'man'\n l boolexpr = 2 != x");
 p.start();
 console.log(p.nodes, p.errors, p.vars);
