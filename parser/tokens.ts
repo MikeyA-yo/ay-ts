@@ -443,6 +443,6 @@ export class TokenGen {
   }
 }
 
- const tg = new TokenGen("l b /* b*/ = 'Hey'\nl c\nl y = 'Why?'\ndef");
-// tg.toNewLine()
- console.log(tokenize("l b // = 'Hey'\nl y = 'Why?'\n /* multiline\n comment \n test*/"))
+//  const tg = new TokenGen("l b /* b*/ = 'Hey'\nl c\nl y = 'Why?'\ndef");
+// // tg.toNewLine()
+// console.log(tokenize("l b // = 'Hey'\nl y = 'Why?'\n /* multiline\n comment \n test*/\n after"))
