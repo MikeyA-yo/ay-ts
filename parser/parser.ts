@@ -92,52 +92,151 @@ export class Parser {
   // }
   parseNotnMinusExpression() {
     const operator = this.consume().value; // Consume the unary operator (! or -)
-    const operand = this.expectTokenVal("(") ? this.parseParenExpr() : this.parseExpression();
+    const operand = this.expectTokenVal("(")
+      ? this.parseParenExpr()
+      : this.parseExpression();
     return {
       operator,
       operand,
     };
   }
-  
+  parseCallExpr() {
+    const identifier = this.consume().value; // Consume the function identifier
+    const args: ASTNode[] = [];
+
+    if (!this.expectTokenVal("(")) {
+      this.errors.push(`Expected '(' to call function`);
+      return null; // Return null if parentheses are not found
+    }
+
+    this.consume(); // Consume the opening '('
+
+    // Check for an empty argument list
+    if (this.expectTokenVal(")")) {
+      this.consume(); // Consume the closing ')'
+      return {
+        type: "CallExpression",
+        identifier,
+        args,
+      };
+    }
+
+    // Parse the arguments
+    while (!this.expectTokenVal(")")) {
+      const arg = this.parseExpression();
+      if (!arg) {
+        this.errors.push(`Invalid argument in function call`);
+        break; // Prevent infinite loops if parseExpression fails
+      }
+      args.push(arg); // Collect the parsed argument
+      if (this.expectTokenVal(",")) {
+        this.consume(); // Consume the comma separator
+      } else if (!this.expectTokenVal(")")) {
+        this.errors.push(`Expected ',' or ')' in function call`);
+        break;
+      }
+    }
+
+    if (this.expectTokenVal(")")) {
+      this.consume(); // Consume the closing ')'
+    } else {
+      this.errors.push(`Unmatched parentheses in function call`);
+    }
+
+    return {
+      type: "CallExpression",
+      identifier,
+      args,
+    };
+  }
+  parseArray() {
+    let elements: ASTNode[] = [];
+    this.consume(); // Consume the opening '['
+
+    if (this.expectTokenVal("]")) {
+        this.consume();
+        return { elements };
+    }
+
+    while (!this.expectTokenVal("]")) {
+        // Skip newlines
+        if (this.expectToken(TokenType.NewLine)) {
+            this.consume();
+            continue;
+        }
+
+        let element = this.parseExpression();
+        if (!element) {
+            this.errors.push(`Invalid expression in array`);
+            break;
+        }
+        elements.push(element);
+
+        if (this.expectTokenVal(",")) {
+            this.consume(); // Consume the comma separator
+        } else if (!this.expectTokenVal("]")) {
+            this.errors.push(`Expected ',' or ']' in array`);
+            break;
+        }
+    }
+
+    if (this.expectTokenVal("]")) {
+        this.consume(); // Consume the closing ']'
+    } else {
+        this.errors.push(`Unmatched brackets in array`);
+    }
+
+    return { elements };
+}
+
   parseExpression() {
     let left;
 
     if (this.expectTokenVal("(")) {
       // Handle parenthesized expressions
       left = this.parseParenExpr();
-    } else if(this.expectTokenVal("!") || this.expectTokenVal("-")){
-      left = this.parseNotnMinusExpression()
+    } else if (this.expectTokenVal("!") || this.expectTokenVal("-")) {
+      left = this.parseNotnMinusExpression();
+    } else if (
+      this.expectToken(TokenType.Identifier) &&
+      this.expectPeekVal("(")
+    ) {
+      left = this.parseCallExpr();
+    } else if (this.expectTokenVal("[")){
+       left = this.parseArray()
     }else {
       // Consume basic literals/identifiers
       left = this.consume().value;
     }
-    
+
     // Check if there’s an operator next
-    if (this.expectToken(TokenType.Operator) || this.expectTokenVal(",")) {
-      if (this.expectTokenVal(",")){
-        this.tokenizer.getCurrentToken().value = "+"
-        this.tokenizer.getCurrentToken().type = TokenType.Operator
+    if (this.expectToken(TokenType.Operator) || this.expectTokenVal("~")) {
+      if (this.expectTokenVal("~")) {
+        this.tokenizer.getCurrentToken().value = "+";
+        this.tokenizer.getCurrentToken().type = TokenType.Operator;
       }
       const op = this.consume().value;
-      
+
       // Handle the right-hand side of the expression
       let right;
       if (
+        //Line and file end terminators
         this.expectPeek(TokenType.EOF) ||
         this.expectPeek(TokenType.NewLine) ||
         this.expectPeekVal(";") ||
-        this.expectPeekVal(")")
+        //parentheses expr
+        this.expectPeekVal(")") ||
+        //array values and function call exprs end
+        this.expectPeekVal(",")
       ) {
         right = this.consume().value; // Simple right-hand expression
-        if (
-          !this.expectTokenVal(")")
-        ) {
+        if (!this.expectTokenVal(")") && !this.expectTokenVal(",")) {
           this.consume();
         }
       } else {
         right = this.parseExpression(); // Recursively parse complex expressions
       }
-      
+
       return {
         operator: op,
         left,
@@ -151,7 +250,7 @@ export class Parser {
   parseParenExpr() {
     this.consume(); // Consume the opening '('
     // Important Error checks:
-    if(this.expectTokenVal(")")){
+    if (this.expectTokenVal(")")) {
       this.errors.push("Empty parentheses!");
     }
     const expression = this.parseExpression(); // Parse the inner expression
@@ -160,7 +259,7 @@ export class Parser {
     } else {
       this.errors.push("Unmatched parentheses!");
     }
-   
+
     return { paren: expression }; // Return the parsed inner expression
   }
 
@@ -209,12 +308,12 @@ export class Parser {
               let bL = this.nodes.length;
               this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
             } else {
-              if (
-                this.tokenizer.peek().type === TokenType.Operator ||
-                this.tokenizer.peek().value === ","
-              ) {
-                initializer = this.parseExpression();
-              }
+              // if (
+              //   this.tokenizer.peek().type === TokenType.Operator ||
+              //   this.tokenizer.peek().value === "~"
+              // ) {
+              initializer = this.parseExpression();
+              //}
             }
             break;
           case TokenType.Literal:
@@ -257,11 +356,15 @@ export class Parser {
               // another error, fallthrough
             }
           case TokenType.Keyword:
-            if (this.expectTokenVal("true") || this.expectTokenVal("false")){
-              initializer = this.parseExpression() ;
-              this.vars.push({ dataType: "boolean", val: identifier, nodePos: this.nodes.length });
+            if (this.expectTokenVal("true") || this.expectTokenVal("false")) {
+              initializer = this.parseExpression();
+              this.vars.push({
+                dataType: "boolean",
+                val: identifier,
+                nodePos: this.nodes.length,
+              });
             }
-            break;  
+            break;
           default:
             this.errors.push(
               `Unexpected token: ${
@@ -352,9 +455,8 @@ export class Parser {
         this.expectPeek(TokenType.Literal) ||
         this.expectPeek(TokenType.StringLiteral)
       ) {
-        let rtToken = this.consume();
-        let isIdentifier = this.expectToken(TokenType.Identifier);
-        const tk = this.consume();
+        this.consume();
+        const tk = this.parseExpression();
         if (
           this.expectToken(TokenType.NewLine) ||
           this.expectTokenVal(";") ||
@@ -371,8 +473,8 @@ export class Parser {
         return {
           type: ASTNodeType.Return,
           initializer: {
-            type: isIdentifier ? ASTNodeType.Identifier : ASTNodeType.Literal,
-            value: tk.value,
+            type: ASTNodeType.Expression,
+            value: tk,
           },
         };
       }
@@ -445,12 +547,12 @@ export class Parser {
         }
         break;
       case TokenType.Punctuation:
-        if (baseToken.value === ";"){
+        if (baseToken.value === ";") {
           this.tokenizer.next();
         } else {
           this.errors.push(`Unexpected statement start: ${baseToken.value}`);
           this.tokenizer.next();
-        } 
+        }
         break;
       case TokenType.NewLine:
         this.tokenizer.next();
@@ -471,7 +573,7 @@ export class Parser {
     }
   }
 }
-// 
-const p = new Parser("l pexr = -(6 - 5) + -(8*8)\nl bool = true\nl myString = 'Hello, world!'");
+// Deno.readTextFileSync("./myprogram.ay")
+const p = new Parser("l pexr = -(6 - 5) + -(8*8)\nl callE = call(1,rand(1))\n l arr =[1, 2, 4, 5, 9]");
 p.start();
 console.log(p.nodes, p.errors, p.vars);

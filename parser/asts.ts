@@ -34,6 +34,31 @@ type init = {
     raw?:string
 }
 type params = left[]
+type BinaryExpressionNode = {
+  type: ASTNodeType;
+  operator: string;
+  left: ASTNode;
+  right: ASTNode;
+};
+type VariableDeclarationNode = {
+  type: ASTNodeType;
+  identifier: string;
+  initializer: ASTNode; // Initializer (could be a literal or expression)
+};
+
+type ReturnNode = {
+  type:ASTNodeType,
+  initializer?:ASTNode,
+  value?:string
+}
+
+type IfElse = {
+    //if-else
+    type:ASTNodeType,
+    test?:ASTNode;
+    consequent?:ASTNode;
+    alternate?:ASTNode
+}
 //i plan on using this to represent any kind of node at all, due to lack of proper typescript knowledge in dealing with seperation of concerns
 export interface ASTNode {
   // base of literals and identifiers
@@ -63,10 +88,4 @@ export interface Variable{
   dataType: string,
   val:string,
   nodePos:number
-}
-export interface VariableDeclarationNode extends ASTNode {
-  type: ASTNodeType.VariableDeclaration;
-  identifier: string;
-  dataType?: string;
-  initializer: ASTNode | null;
 }

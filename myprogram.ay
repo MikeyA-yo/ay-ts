@@ -5,3 +5,10 @@ l b = "hello world"
 l c = 3 + 3
 
 l d = round(rand() * 12)
+
+l arr = [
+    1,
+    3,
+    5,
+    7,
+]
