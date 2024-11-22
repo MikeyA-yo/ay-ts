@@ -12,3 +12,7 @@ l arr = [
     5,
     7,
 ]
+
+f add(a,b){
+    return a + b
+}

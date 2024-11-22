@@ -154,40 +154,40 @@ export class Parser {
     this.consume(); // Consume the opening '['
 
     if (this.expectTokenVal("]")) {
-        this.consume();
-        return { elements };
+      this.consume();
+      return { elements };
     }
 
     while (!this.expectTokenVal("]")) {
-        // Skip newlines
-        if (this.expectToken(TokenType.NewLine)) {
-            this.consume();
-            continue;
-        }
+      // Skip newlines
+      if (this.expectToken(TokenType.NewLine)) {
+        this.consume();
+        continue;
+      }
 
-        let element = this.parseExpression();
-        if (!element) {
-            this.errors.push(`Invalid expression in array`);
-            break;
-        }
-        elements.push(element);
+      let element = this.parseExpression();
+      if (!element) {
+        this.errors.push(`Invalid expression in array`);
+        break;
+      }
+      elements.push(element);
 
-        if (this.expectTokenVal(",")) {
-            this.consume(); // Consume the comma separator
-        } else if (!this.expectTokenVal("]")) {
-            this.errors.push(`Expected ',' or ']' in array`);
-            break;
-        }
+      if (this.expectTokenVal(",")) {
+        this.consume(); // Consume the comma separator
+      } else if (!this.expectTokenVal("]")) {
+        this.errors.push(`Expected ',' or ']' in array`);
+        break;
+      }
     }
 
     if (this.expectTokenVal("]")) {
-        this.consume(); // Consume the closing ']'
+      this.consume(); // Consume the closing ']'
     } else {
-        this.errors.push(`Unmatched brackets in array`);
+      this.errors.push(`Unmatched brackets in array`);
     }
 
     return { elements };
-}
+  }
 
   parseExpression() {
     let left;
@@ -202,9 +202,9 @@ export class Parser {
       this.expectPeekVal("(")
     ) {
       left = this.parseCallExpr();
-    } else if (this.expectTokenVal("[")){
-       left = this.parseArray()
-    }else {
+    } else if (this.expectTokenVal("[")) {
+      left = this.parseArray();
+    } else {
       // Consume basic literals/identifiers
       left = this.consume().value;
     }
@@ -432,19 +432,6 @@ export class Parser {
       this.expectPeekVal("}")
     ) {
       let rtToken = this.consume();
-      if (
-        this.expectToken(TokenType.NewLine) ||
-        this.expectTokenVal(";") ||
-        this.expectTokenVal("}")
-      ) {
-        this.consume();
-        if (
-          this.expectToken(TokenType.EOF) ||
-          this.expectToken(TokenType.NewLine)
-        ) {
-          this.consume();
-        }
-      }
       return {
         type: ASTNodeType.Return,
         value: rtToken.value,
@@ -457,19 +444,7 @@ export class Parser {
       ) {
         this.consume();
         const tk = this.parseExpression();
-        if (
-          this.expectToken(TokenType.NewLine) ||
-          this.expectTokenVal(";") ||
-          this.expectTokenVal("}")
-        ) {
-          this.consume();
-          if (
-            this.expectToken(TokenType.EOF) ||
-            this.expectToken(TokenType.NewLine)
-          ) {
-            this.consume();
-          }
-        }
+
         return {
           type: ASTNodeType.Return,
           initializer: {
@@ -487,19 +462,6 @@ export class Parser {
       this.expectPeekVal("}")
     ) {
       let rtToken = this.consume();
-      if (
-        this.expectToken(TokenType.NewLine) ||
-        this.expectTokenVal(";") ||
-        this.expectTokenVal("}")
-      ) {
-        this.consume();
-        if (
-          this.expectToken(TokenType.EOF) ||
-          this.expectToken(TokenType.NewLine)
-        ) {
-          this.consume();
-        }
-      }
       return {
         type: ASTNodeType.Return,
         value: rtToken.value,
@@ -519,6 +481,122 @@ export class Parser {
         value: rtToken.value,
       };
     }
+  }
+  parseFunc() {
+    this.consume();
+    let identifier;
+    let params;
+    let body;
+    if (this.expectToken(TokenType.Identifier)) {
+      // parse
+      identifier = this.consume().value;
+      if (this.expectTokenVal("(")) {
+        params = this.parseFuncParams();
+        if (this.expectTokenVal("{")) {
+          body = this.parseBlockStmt();
+        } else {
+          this.errors.push(`Expected '{' for function body`);
+        }
+        return {
+          type: ASTNodeType.FunctionDeclaration,
+          identifier,
+          params,
+          body,
+        };
+      } else {
+        this.errors.push(`Expected '(' at function declaration`);
+      }
+    } else {
+      // potential error, will assert at the end,if the function isn't called
+    }
+  }
+  parseFuncParams() {
+    this.consume();
+    let params: ASTNode[] = [];
+    while (!this.expectTokenVal(")")) {
+      const arg = this.parseExpression();
+      if (!arg) {
+        this.errors.push(`Invalid argument in function Declaration`);
+        break; // Prevent infinite loops if parseExpression fails
+      }
+      params.push(arg); // Collect the parsed argument
+      if (this.expectTokenVal(",")) {
+        this.consume(); // Consume the comma separator
+      } else if (!this.expectTokenVal(")")) {
+        this.errors.push(`Expected ',' or ')' in function Declaration`);
+        break;
+      }
+    }
+    if (this.expectTokenVal(")")) {
+      this.consume();
+    } else {
+      this.errors.push(`Unmatched parentheses`);
+    }
+    return params;
+  }
+  parseBlockStmt() {
+    this.consume();
+    let body: ASTNode[] = [];
+    while (!this.expectTokenVal("}")) {
+      // Skip newlines
+      if (this.expectToken(TokenType.NewLine)) {
+        this.consume();
+        continue;
+      }
+      let node = this.checkParseReturn();
+      body.push(node);
+    }
+    if (this.expectTokenVal("}")) {
+      this.consume();
+    } else {
+      this.errors.push(`Block not closed properly`);
+    }
+    return body;
+  }
+  checkParseReturn() {
+    let baseToken = this.tokenizer.getCurrentToken();
+    let node;
+    switch (baseToken.type) {
+      case TokenType.Keyword:
+        switch (baseToken.value) {
+          case tokens.l:
+            node = this.parseVariable();
+            break;
+          case "def":
+            node = this.parseDefine();
+            break;
+          case "return":
+            node = this.parseReturn();
+            break;
+          case "break":
+          case "continue":
+            node = this.parseBreakNCont();
+
+            break;
+          case "f":
+            node = this.parseFunc();
+            break;
+          default:
+          //hehe
+        }
+        break;
+      case TokenType.Punctuation:
+        if (baseToken.value === ";") {
+          this.tokenizer.next();
+        } else {
+          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.tokenizer.next();
+        }
+        break;
+      case TokenType.NewLine:
+        this.tokenizer.next();
+        break;
+      default:
+        this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+        this.tokenizer.next();
+      //Syntax Error Likely
+    }
+    return node;
   }
   checkAndParse() {
     let baseToken = this.tokenizer.getCurrentToken();
@@ -541,6 +619,10 @@ export class Parser {
           case "continue":
             let nodeBC = this.parseBreakNCont();
             nodeBC && this.nodes.push(nodeBC);
+            break;
+          case "f":
+            let nodeF = this.parseFunc();
+            nodeF && this.nodes.push(nodeF);
             break;
           default:
           //hehe
@@ -574,6 +656,9 @@ export class Parser {
   }
 }
 // Deno.readTextFileSync("./myprogram.ay")
-const p = new Parser("l pexr = -(6 - 5) + -(8*8)\nl callE = call(1,rand(1))\n l arr =[1, 2, 4, 5, 9]");
+// let f = Bun.file("./myprogram.ay")
+const p = new Parser(
+  "l pexr = -(6 - 5) + -(8*8)\nl callE = call(1,rand(1))\n l arr =[1, 2, 4, 5, 9]\n f myFunc(a){\n return a\n}"
+);
 p.start();
 console.log(p.nodes, p.errors, p.vars);
