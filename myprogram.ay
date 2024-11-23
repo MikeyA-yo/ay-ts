@@ -14,5 +14,15 @@ l arr = [
 ]
 
 f add(a,b){
-    return a + b
+    l c = a + b
+    return c
+}
+
+f avg(a, b){
+    l c = (a + b) /2
+    return c
+}
+
+if (a == b) {
+    return true;
 }

@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { TokenGen, tokens, TokenType } from "./tokens";
+import { isAllowedKey, TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
@@ -79,7 +79,7 @@ export class Parser {
     }
     return {
       type: ASTNodeType.Literal,
-      value: token?.value,
+      value: token.value,
     };
   }
   isDefinedVar(v: string) {
@@ -440,7 +440,8 @@ export class Parser {
       if (
         this.expectPeek(TokenType.Identifier) ||
         this.expectPeek(TokenType.Literal) ||
-        this.expectPeek(TokenType.StringLiteral)
+        this.expectPeek(TokenType.StringLiteral) ||
+        isAllowedKey(this.tokenizer.peek().value)
       ) {
         this.consume();
         const tk = this.parseExpression();
@@ -514,7 +515,7 @@ export class Parser {
     this.consume();
     let params: ASTNode[] = [];
     while (!this.expectTokenVal(")")) {
-      const arg = this.parseExpression();
+      const arg = this.parseLiteral();
       if (!arg) {
         this.errors.push(`Invalid argument in function Declaration`);
         break; // Prevent infinite loops if parseExpression fails
@@ -538,8 +539,8 @@ export class Parser {
     this.consume();
     let body: ASTNode[] = [];
     while (!this.expectTokenVal("}")) {
-      // Skip newlines
-      if (this.expectToken(TokenType.NewLine)) {
+      // Skip newlines and statement terminator
+      if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
         this.consume();
         continue;
       }
@@ -552,6 +553,48 @@ export class Parser {
       this.errors.push(`Block not closed properly`);
     }
     return body;
+  }
+  parseIfElse(){
+    this.consume();
+    let test;
+    let consequence;
+    let alternate;
+    if (this.expectTokenVal("(")){
+       test = this.parseExpression();
+    }else{
+      this.errors.push (`Expected '(' got ${this.tokenizer.getCurrentToken().value}`);
+      return null;
+    }
+    if (!this.expectTokenVal('{')){
+      this.errors.push (`Expected ')' got ${this.tokenizer.getCurrentToken().value}`);
+      return null; 
+    }
+    consequence = this.parseBlockStmt();
+    console.log(consequence)
+    if (!this.expectTokenVal("else")){
+      return { 
+        type: ASTNodeType.IfElse,
+        test,
+        consequence
+      }
+    }
+    this.consume();
+    if (this.expectTokenVal("if") || this.expectTokenVal("{")){
+        if (this.expectTokenVal("{")){
+          alternate = this.parseBlockStmt()
+        }else{
+          alternate = this.parseIfElse();
+        }
+        return {
+          type:ASTNodeType.IfElse,
+          test,
+          consequence, 
+          alternate
+        }
+    } else {
+      this.errors.push(`Unexpected token after else keyword: ${this.tokenizer.getCurrentToken()}`);
+      return null
+    }
   }
   checkParseReturn() {
     let baseToken = this.tokenizer.getCurrentToken();
@@ -576,6 +619,8 @@ export class Parser {
           case "f":
             node = this.parseFunc();
             break;
+          case "if":
+            node = this.parseIfElse()  
           default:
           //hehe
         }
@@ -624,7 +669,12 @@ export class Parser {
             let nodeF = this.parseFunc();
             nodeF && this.nodes.push(nodeF);
             break;
+          case "if":
+            let nodeIf = this.parseIfElse();
+            nodeIf && this.nodes.push(nodeIf);
+            break;  
           default:
+            this.consume()
           //hehe
         }
         break;
@@ -656,9 +706,9 @@ export class Parser {
   }
 }
 // Deno.readTextFileSync("./myprogram.ay")
-// let f = Bun.file("./myprogram.ay")
+ let f = Bun.file("./myprogram.ay")
 const p = new Parser(
-  "l pexr = -(6 - 5) + -(8*8)\nl callE = call(1,rand(1))\n l arr =[1, 2, 4, 5, 9]\n f myFunc(a){\n return a\n}"
+  await f.text()
 );
 p.start();
 console.log(p.nodes, p.errors, p.vars);

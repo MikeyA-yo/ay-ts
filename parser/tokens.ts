@@ -102,7 +102,10 @@ const keywords = [
   "with",
   "yield",
 ];
-
+const allowedKeysAsVal = ["true", "false", "this", "f"/* for functions as variables */, "new"]
+export function isAllowedKey(key:string){
+   return allowedKeysAsVal.includes(key)
+}
 export enum TokenType {
   Identifier,
   Operator,
