@@ -126,7 +126,7 @@ export interface Token {
   value: string;
 }
 
-function isKeyword(value: string) {
+export function isKeyword(value: string) {
   return keywords.includes(value);
 }
 function tokenize(line: string) {

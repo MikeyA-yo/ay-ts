@@ -21,10 +21,6 @@ f add(a,b){
     return c
 }
 
-f avg(a, b){
-    l c = (a + b) /2
-    return c
-}
 
 if (a == b) {
     return true;
@@ -33,13 +29,9 @@ if (a == b) {
 }else{
     return false
 }
-l varFunc = f (){
-}
-l addd = 3 + 1;
 f foo(a) {
     if (a > 0) {
         l result = add(a, a);
         return result;
     }
 }
-a + b

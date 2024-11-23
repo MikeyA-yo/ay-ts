@@ -13,7 +13,8 @@ export enum ASTNodeType {
   DefDecl,
   BlockStatement,
   Return,
-  IfElse
+  IfElse,
+  Loop
 }
 type right = {
     type?:string;

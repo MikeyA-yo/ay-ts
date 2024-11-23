@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { isAllowedKey, TokenGen, tokens, TokenType } from "./tokens";
+import { isAllowedKey, isKeyword, TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
@@ -607,7 +607,7 @@ export class Parser {
     }
     if (!this.expectTokenVal("{")) {
       this.errors.push(
-        `Expected ')' got ${this.tokenizer.getCurrentToken().value}`
+        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
       );
       return null;
     }
@@ -639,6 +639,28 @@ export class Parser {
       return null;
     }
   }
+  parseWhileLoop(){
+    this.consume();
+    let test;
+    let body;
+    if (!this.expectTokenVal("(")){
+      this.errors.push(`Expected '(' got: ${this.tokenizer.getCurrentToken().value}`)
+      return null;
+    }
+    test = this.parseExpression()
+    if (!this.expectTokenVal("{")) {
+      this.errors.push(
+        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
+      );
+      return null;
+    }
+    body = this.parseBlockStmt();
+    return {
+      type:ASTNodeType.Loop,
+      test,
+      body
+    }
+  }
   checkParseReturn() {
     let baseToken = this.tokenizer.getCurrentToken();
     let node;
@@ -664,6 +686,9 @@ export class Parser {
             break;
           case "if":
             node = this.parseIfElse();
+            break;
+          case "while":
+            node = this.parseWhileLoop()  
           default:
           //hehe
         }
@@ -682,8 +707,7 @@ export class Parser {
       case TokenType.Identifier:
       case TokenType.Literal:
       case TokenType.StringLiteral:
-        let nodeE = this.parseExpression();
-        nodeE && this.nodes.push(nodeE);
+        node = this.parseExpression();
         break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
@@ -722,6 +746,9 @@ export class Parser {
             let nodeIf = this.parseIfElse();
             nodeIf && this.nodes.push(nodeIf);
             break;
+          case "while":
+            let nodeW = this.parseWhileLoop();
+            nodeW && this.nodes.push(nodeW)  
           default:
             this.consume();
           //hehe
@@ -751,10 +778,6 @@ export class Parser {
     }
   }
   start() {
-    // currently this.checkAndParse only executes line statements not blocks,
-    //todo figure out how i'd do it with blocks
-    //just figured how to handle block statements, i keep track of the line the block ends. i'd keep a variable to know also if we in block
-    //
     while (this.tokenizer.getCurrentToken().type !== TokenType.EOF) {
       this.checkAndParse();
     }
@@ -762,7 +785,7 @@ export class Parser {
 }
 // Can now parse myprogram.ay, for now i'll build compiler for this and work on adding more language features after
 // Deno.readTextFileSync("./myprogram.ay")
-// let f = Bun.file("./myprogram.ay");
-// const p = new Parser(await f.text());
-// p.start();
-// console.log(p.nodes, p.errors, p.vars);
+let f = Bun.file("./myprogram.ay");
+const p = new Parser(await f.text());
+p.start();
+console.log(p.nodes, p.errors, p.vars);
