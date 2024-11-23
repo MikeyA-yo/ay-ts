@@ -204,6 +204,8 @@ export class Parser {
       left = this.parseCallExpr();
     } else if (this.expectTokenVal("[")) {
       left = this.parseArray();
+    } else if (this.expectTokenVal("f")) {
+      left = this.parseFunc();
     } else {
       // Consume basic literals/identifiers
       left = this.consume().value;
@@ -216,6 +218,15 @@ export class Parser {
         this.tokenizer.getCurrentToken().type = TokenType.Operator;
       }
       const op = this.consume().value;
+      // Validate the next token for the right-hand side
+      if (
+        !this.expectToken(TokenType.Identifier) &&
+        !this.expectToken(TokenType.Literal) &&
+        !this.expectTokenVal("(")
+      ) {
+        this.errors.push(`Invalid expression after operator '${op}'`);
+        return left; // Return what we have so far
+      }
 
       // Handle the right-hand side of the expression
       let right;
@@ -363,6 +374,16 @@ export class Parser {
                 val: identifier,
                 nodePos: this.nodes.length,
               });
+            } else {
+              if (isAllowedKey(this.tokenizer.getCurrentToken().value)) {
+                switch (this.tokenizer.getCurrentToken().value) {
+                  case "f":
+                    initializer = this.parseFunc();
+                    break;
+                  default:
+                    initializer = this.parseLiteral();
+                }
+              }
             }
             break;
           default:
@@ -454,6 +475,8 @@ export class Parser {
           },
         };
       }
+      this.errors.push("Unexpected token after return statement");
+      this.consume();
     }
   }
   parseBreakNCont() {
@@ -509,6 +532,21 @@ export class Parser {
       }
     } else {
       // potential error, will assert at the end,if the function isn't called
+      if (this.expectTokenVal("(")) {
+        params = this.parseFuncParams();
+        if (this.expectTokenVal("{")) {
+          body = this.parseBlockStmt();
+        } else {
+          this.errors.push(`Expected '{' for function body`);
+        }
+        return {
+          type: ASTNodeType.FunctionDeclaration,
+          params,
+          body,
+        };
+      } else {
+        this.errors.push(`Expected '(' at anonymouds or function declaration`);
+      }
     }
   }
   parseFuncParams() {
@@ -554,46 +592,51 @@ export class Parser {
     }
     return body;
   }
-  parseIfElse(){
+  parseIfElse() {
     this.consume();
     let test;
     let consequence;
     let alternate;
-    if (this.expectTokenVal("(")){
-       test = this.parseExpression();
-    }else{
-      this.errors.push (`Expected '(' got ${this.tokenizer.getCurrentToken().value}`);
+    if (this.expectTokenVal("(")) {
+      test = this.parseExpression();
+    } else {
+      this.errors.push(
+        `Expected '(' got ${this.tokenizer.getCurrentToken().value}`
+      );
       return null;
     }
-    if (!this.expectTokenVal('{')){
-      this.errors.push (`Expected ')' got ${this.tokenizer.getCurrentToken().value}`);
-      return null; 
+    if (!this.expectTokenVal("{")) {
+      this.errors.push(
+        `Expected ')' got ${this.tokenizer.getCurrentToken().value}`
+      );
+      return null;
     }
     consequence = this.parseBlockStmt();
-    console.log(consequence)
-    if (!this.expectTokenVal("else")){
-      return { 
+    if (!this.expectTokenVal("else")) {
+      return {
         type: ASTNodeType.IfElse,
         test,
-        consequence
-      }
+        consequence,
+      };
     }
     this.consume();
-    if (this.expectTokenVal("if") || this.expectTokenVal("{")){
-        if (this.expectTokenVal("{")){
-          alternate = this.parseBlockStmt()
-        }else{
-          alternate = this.parseIfElse();
-        }
-        return {
-          type:ASTNodeType.IfElse,
-          test,
-          consequence, 
-          alternate
-        }
+    if (this.expectTokenVal("if") || this.expectTokenVal("{")) {
+      if (this.expectTokenVal("{")) {
+        alternate = this.parseBlockStmt();
+      } else {
+        alternate = this.parseIfElse();
+      }
+      return {
+        type: ASTNodeType.IfElse,
+        test,
+        consequence,
+        alternate,
+      };
     } else {
-      this.errors.push(`Unexpected token after else keyword: ${this.tokenizer.getCurrentToken()}`);
-      return null
+      this.errors.push(
+        `Unexpected token after else keyword: ${this.tokenizer.getCurrentToken()}`
+      );
+      return null;
     }
   }
   checkParseReturn() {
@@ -620,7 +663,7 @@ export class Parser {
             node = this.parseFunc();
             break;
           case "if":
-            node = this.parseIfElse()  
+            node = this.parseIfElse();
           default:
           //hehe
         }
@@ -635,6 +678,12 @@ export class Parser {
         break;
       case TokenType.NewLine:
         this.tokenizer.next();
+        break;
+      case TokenType.Identifier:
+      case TokenType.Literal:
+      case TokenType.StringLiteral:
+        let nodeE = this.parseExpression();
+        nodeE && this.nodes.push(nodeE);
         break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
@@ -672,9 +721,9 @@ export class Parser {
           case "if":
             let nodeIf = this.parseIfElse();
             nodeIf && this.nodes.push(nodeIf);
-            break;  
+            break;
           default:
-            this.consume()
+            this.consume();
           //hehe
         }
         break;
@@ -688,6 +737,12 @@ export class Parser {
         break;
       case TokenType.NewLine:
         this.tokenizer.next();
+        break;
+      case TokenType.Identifier:
+      case TokenType.Literal:
+      case TokenType.StringLiteral:
+        let nodeE = this.parseExpression();
+        nodeE && this.nodes.push(nodeE);
         break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
@@ -705,10 +760,9 @@ export class Parser {
     }
   }
 }
+// Can now parse myprogram.ay, for now i'll build compiler for this and work on adding more language features after
 // Deno.readTextFileSync("./myprogram.ay")
- let f = Bun.file("./myprogram.ay")
-const p = new Parser(
-  await f.text()
-);
-p.start();
-console.log(p.nodes, p.errors, p.vars);
+// let f = Bun.file("./myprogram.ay");
+// const p = new Parser(await f.text());
+// p.start();
+// console.log(p.nodes, p.errors, p.vars);

@@ -1,5 +1,4 @@
-l a = "my program variables are nicely scoped"
-
+l a = "my program variables are nicely scoped"; 
 l b = "hello world"
 
 l c = 3 + 3
@@ -12,7 +11,11 @@ l arr = [
     5,
     7,
 ]
+//ignored hopefully
+/*
 
+This too
+*/
 f add(a,b){
     l c = a + b
     return c
@@ -25,4 +28,18 @@ f avg(a, b){
 
 if (a == b) {
     return true;
+} else if ( c == b){
+    return "true"
+}else{
+    return false
 }
+l varFunc = f (){
+}
+l addd = 3 + 1;
+f foo(a) {
+    if (a > 0) {
+        l result = add(a, a);
+        return result;
+    }
+}
+a + b
