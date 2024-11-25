@@ -77,7 +77,6 @@ const keywords = [
   "do", // custom & JavaScript
   "imp@",
   "exp@",
-  "print",
   "from",
   "false",
   "true",

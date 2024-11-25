@@ -85,11 +85,6 @@ export class Parser {
   isDefinedVar(v: string) {
     return this.vars.some((val) => val.val === v);
   }
-  // parseNotnMinusExpression() {
-  //   let val = this.consume().value;
-  //   let initializer = val + this.consume().value;
-  //   return initializer;
-  // }
   parseNotnMinusExpression() {
     const operator = this.consume().value; // Consume the unary operator (! or -)
     const operand = this.expectTokenVal("(")
@@ -188,7 +183,23 @@ export class Parser {
 
     return { elements };
   }
-
+  parseIncDec() {
+    if (
+      this.expectToken(TokenType.Operator) &&
+      this.expectPeek(TokenType.Identifier)
+    ) {
+      let infixop = this.consume().value;
+      let identifier = this.consume().value;
+      return { infixop, identifier };
+    } else {
+      let identifier = this.consume().value;
+      let postop = this.consume().value;
+      return {
+        postop,
+        identifier,
+      };
+    }
+  }
   parseExpression() {
     let left;
 
@@ -206,6 +217,13 @@ export class Parser {
       left = this.parseArray();
     } else if (this.expectTokenVal("f")) {
       left = this.parseFunc();
+    } else if (
+      this.expectTokenVal("--") ||
+      this.expectTokenVal("++") ||
+      (this.expectToken(TokenType.Identifier) &&
+        (this.expectPeekVal("--") || this.expectPeekVal("++")))
+    ) {
+      left = this.parseIncDec();
     } else {
       // Consume basic literals/identifiers
       left = this.consume().value;
@@ -319,12 +337,7 @@ export class Parser {
               let bL = this.nodes.length;
               this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
             } else {
-              // if (
-              //   this.tokenizer.peek().type === TokenType.Operator ||
-              //   this.tokenizer.peek().value === "~"
-              // ) {
               initializer = this.parseExpression();
-              //}
             }
             break;
           case TokenType.Literal:
@@ -358,7 +371,9 @@ export class Parser {
             //prefix operators
             if (
               this.expectTokenVal(tokens.not) ||
-              this.expectTokenVal(tokens.sub)
+              this.expectTokenVal(tokens.sub) ||
+              this.expectTokenVal("--") ||
+              this.expectTokenVal("++")
             ) {
               //todo
               initializer = this.parseExpression();
@@ -639,15 +654,17 @@ export class Parser {
       return null;
     }
   }
-  parseWhileLoop(){
+  parseWhileLoop() {
     this.consume();
     let test;
     let body;
-    if (!this.expectTokenVal("(")){
-      this.errors.push(`Expected '(' got: ${this.tokenizer.getCurrentToken().value}`)
+    if (!this.expectTokenVal("(")) {
+      this.errors.push(
+        `Expected '(' got: ${this.tokenizer.getCurrentToken().value}`
+      );
       return null;
     }
-    test = this.parseExpression()
+    test = this.parseExpression();
     if (!this.expectTokenVal("{")) {
       this.errors.push(
         `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
@@ -656,10 +673,10 @@ export class Parser {
     }
     body = this.parseBlockStmt();
     return {
-      type:ASTNodeType.Loop,
+      type: ASTNodeType.Loop,
       test,
-      body
-    }
+      body,
+    };
   }
   checkParseReturn() {
     let baseToken = this.tokenizer.getCurrentToken();
@@ -688,7 +705,7 @@ export class Parser {
             node = this.parseIfElse();
             break;
           case "while":
-            node = this.parseWhileLoop()  
+            node = this.parseWhileLoop();
           default:
           //hehe
         }
@@ -708,6 +725,20 @@ export class Parser {
       case TokenType.Literal:
       case TokenType.StringLiteral:
         node = this.parseExpression();
+        break;
+      case TokenType.Operator:
+        if (
+          this.expectTokenVal(tokens.not) ||
+          this.expectTokenVal(tokens.sub) ||
+          this.expectTokenVal("--") ||
+          this.expectTokenVal("++")
+        ) {
+          let nodeO = this.parseExpression();
+          nodeO && this.nodes.push(nodeO);
+        } else {
+          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.tokenizer.next();
+        }
         break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
@@ -748,7 +779,7 @@ export class Parser {
             break;
           case "while":
             let nodeW = this.parseWhileLoop();
-            nodeW && this.nodes.push(nodeW)  
+            nodeW && this.nodes.push(nodeW);
           default:
             this.consume();
           //hehe
@@ -771,6 +802,20 @@ export class Parser {
         let nodeE = this.parseExpression();
         nodeE && this.nodes.push(nodeE);
         break;
+      case TokenType.Operator:
+        if (
+          this.expectTokenVal(tokens.not) ||
+          this.expectTokenVal(tokens.sub) ||
+          this.expectTokenVal("--") ||
+          this.expectTokenVal("++")
+        ) {
+          let nodeO = this.parseExpression();
+          nodeO && this.nodes.push(nodeO);
+        } else {
+          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.tokenizer.next();
+        }
+        break;
       default:
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
         this.tokenizer.next();
@@ -785,7 +830,7 @@ export class Parser {
 }
 // Can now parse myprogram.ay, for now i'll build compiler for this and work on adding more language features after
 // Deno.readTextFileSync("./myprogram.ay")
-let f = Bun.file("./myprogram.ay");
-const p = new Parser(await f.text());
-p.start();
-console.log(p.nodes, p.errors, p.vars);
+// let f = Bun.file("./myprogram.ay");
+// const p = new Parser(await f.text());
+// p.start();
+// console.log(p.nodes, p.errors, p.vars);
