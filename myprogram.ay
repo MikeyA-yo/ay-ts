@@ -40,3 +40,7 @@ while ( i < 5){
     print(i)
     i++
 }
+
+for (l i = 0; i < 8; i++){
+    print(i);
+}

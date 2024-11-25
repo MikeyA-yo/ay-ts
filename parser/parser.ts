@@ -678,6 +678,47 @@ export class Parser {
       body,
     };
   }
+  parseForLoop(){
+    this.consume();
+    let initializer;
+    let test;
+    let upgrade;
+    let body;
+    if (!this.expectTokenVal("(")) {
+      this.errors.push(
+        `Expected '(' got: ${this.tokenizer.getCurrentToken().value}`
+      );
+      return null;
+    }
+    this.consume();
+    initializer = this.parseVariable();
+    if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+      this.consume();
+    }
+    test = this.parseExpression();
+    if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+      this.consume();
+    }
+    upgrade = this.parseExpression();
+    this.consume()
+    if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+      this.consume();
+    }
+    if (!this.expectTokenVal("{")) {
+      this.errors.push(
+        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
+      );
+      return null;
+    }
+    body = this.parseBlockStmt();
+    return{
+      type:ASTNodeType.Loop,
+      initializer,
+      test,
+      upgrade,
+      body
+    }
+  }
   checkParseReturn() {
     let baseToken = this.tokenizer.getCurrentToken();
     let node;
@@ -706,6 +747,10 @@ export class Parser {
             break;
           case "while":
             node = this.parseWhileLoop();
+            break;
+          case "for":
+            node = this.parseForLoop()  
+            break
           default:
           //hehe
         }
@@ -780,6 +825,11 @@ export class Parser {
           case "while":
             let nodeW = this.parseWhileLoop();
             nodeW && this.nodes.push(nodeW);
+            break;
+          case "for":
+            let nodeFo = this.parseForLoop();
+            nodeFo && this.nodes.push(nodeFo);
+            break;   
           default:
             this.consume();
           //hehe
