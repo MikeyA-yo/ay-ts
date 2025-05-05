@@ -44,3 +44,4 @@ while ( i < 5){
 for (l i = 0; i < 8; i++){
     print(i);
 }
+foo(20)

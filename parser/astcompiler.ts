@@ -76,7 +76,7 @@ export default function compileAST(ast:ASTNode[]) {
   function compileLoop(node) {
     // For loop
     if (node.initializer && node.test && node.upgrade) {
-      return `for (${compileNode(node.initializer)} ${compileTest(node.test)}; ${compileNode(node.upgrade)}) {\n${(node.body||[]).map(compileNode).join("\n")}\n}`;
+      return `for (${compileNode(node.initializer)} ${compileTest(node.test)}; ${compileNode(node.upgrade).slice(0, -1)}) {\n${(node.body||[]).map(compileNode).join("\n")}\n}`;
     }
     // While loop
     if (node.test && node.body) {
