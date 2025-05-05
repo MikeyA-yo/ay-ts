@@ -77,7 +77,7 @@ export class Parser {
     ) {
       this.consume();
     }
-    return {
+    return <ASTNode>{
       type: ASTNodeType.Literal,
       value: token.value,
     };
@@ -90,7 +90,7 @@ export class Parser {
     const operand = this.expectTokenVal("(")
       ? this.parseParenExpr()
       : this.parseExpression();
-    return {
+    return <ASTNode><unknown>{
       operator,
       operand,
     };
@@ -100,7 +100,7 @@ export class Parser {
     const args: ASTNode[] = [];
 
     if (!this.expectTokenVal("(")) {
-      this.errors.push(`Expected '(' to call function`);
+      this.errors.push(`SyntaxError: Expected '(' after function identifier '${identifier}'`);
       return null; // Return null if parentheses are not found
     }
 
@@ -109,7 +109,7 @@ export class Parser {
     // Check for an empty argument list
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
-      return {
+      return <ASTNode><unknown>{
         type: "CallExpression",
         identifier,
         args,
@@ -120,14 +120,14 @@ export class Parser {
     while (!this.expectTokenVal(")")) {
       const arg = this.parseExpression();
       if (!arg) {
-        this.errors.push(`Invalid argument in function call`);
+        this.errors.push(`SyntaxError: Invalid argument in function call '${identifier}'`);
         break; // Prevent infinite loops if parseExpression fails
       }
       args.push(arg); // Collect the parsed argument
       if (this.expectTokenVal(",")) {
         this.consume(); // Consume the comma separator
       } else if (!this.expectTokenVal(")")) {
-        this.errors.push(`Expected ',' or ')' in function call`);
+        this.errors.push(`SyntaxError: Expected ',' or ')' in function call '${identifier}'`);
         break;
       }
     }
@@ -135,10 +135,10 @@ export class Parser {
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
-      this.errors.push(`Unmatched parentheses in function call`);
+      this.errors.push(`SyntaxError: Unmatched parentheses in function call '${identifier}'`);
     }
 
-    return {
+    return <ASTNode><unknown>{
       type: "CallExpression",
       identifier,
       args,
@@ -150,7 +150,7 @@ export class Parser {
 
     if (this.expectTokenVal("]")) {
       this.consume();
-      return { elements };
+      return <ASTNode><unknown>{ elements };
     }
 
     while (!this.expectTokenVal("]")) {
@@ -162,7 +162,7 @@ export class Parser {
 
       let element = this.parseExpression();
       if (!element) {
-        this.errors.push(`Invalid expression in array`);
+        this.errors.push(`SyntaxError: Invalid array element`);
         break;
       }
       elements.push(element);
@@ -170,7 +170,7 @@ export class Parser {
       if (this.expectTokenVal(",")) {
         this.consume(); // Consume the comma separator
       } else if (!this.expectTokenVal("]")) {
-        this.errors.push(`Expected ',' or ']' in array`);
+        this.errors.push(`SyntaxError: Expected ',' or ']' in array`);
         break;
       }
     }
@@ -178,10 +178,10 @@ export class Parser {
     if (this.expectTokenVal("]")) {
       this.consume(); // Consume the closing ']'
     } else {
-      this.errors.push(`Unmatched brackets in array`);
+      this.errors.push(`SyntaxError: Unmatched brackets in array`);
     }
 
-    return { elements };
+    return <ASTNode><unknown>{ elements };
   }
   parseIncDec() {
     if (
@@ -190,11 +190,11 @@ export class Parser {
     ) {
       let infixop = this.consume().value;
       let identifier = this.consume().value;
-      return { infixop, identifier };
+      return <ASTNode><unknown>{ infixop, identifier };
     } else {
       let identifier = this.consume().value;
       let postop = this.consume().value;
-      return {
+      return <ASTNode><unknown>{
         postop,
         identifier,
       };
@@ -266,7 +266,7 @@ export class Parser {
         right = this.parseExpression(); // Recursively parse complex expressions
       }
 
-      return {
+      return <ASTNode>{
         operator: op,
         left,
         right,
@@ -306,7 +306,7 @@ export class Parser {
         this.expectTokenVal(";")
       ) {
         this.consume();
-        return {
+        return <ASTNode>{
           type: ASTNodeType.VariableDeclaration,
           identifier,
         };
@@ -410,7 +410,7 @@ export class Parser {
             this.tokenizer.toNewLine();
           // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
         }
-        return {
+        return <ASTNode>{
           type: ASTNodeType.VariableDeclaration,
           identifier,
           initializer,
@@ -447,7 +447,7 @@ export class Parser {
         }
       }
       this.defines.set(identifier, initializer.value);
-      return {
+      return <ASTNode>{
         type: ASTNodeType.DefDecl,
         identifier,
         initializer,
@@ -468,7 +468,7 @@ export class Parser {
       this.expectPeekVal("}")
     ) {
       let rtToken = this.consume();
-      return {
+      return <ASTNode>{
         type: ASTNodeType.Return,
         value: rtToken.value,
       };
@@ -482,7 +482,7 @@ export class Parser {
         this.consume();
         const tk = this.parseExpression();
 
-        return {
+        return <ASTNode>{
           type: ASTNodeType.Return,
           initializer: {
             type: ASTNodeType.Expression,
@@ -501,7 +501,7 @@ export class Parser {
       this.expectPeekVal("}")
     ) {
       let rtToken = this.consume();
-      return {
+      return <ASTNode>{
         type: ASTNodeType.Return,
         value: rtToken.value,
       };
@@ -515,7 +515,7 @@ export class Parser {
         }`
       );
       this.tokenizer.toNewLine();
-      return {
+      return <ASTNode>{
         type: ASTNodeType.Return,
         value: rtToken.value,
       };
@@ -536,7 +536,7 @@ export class Parser {
         } else {
           this.errors.push(`Expected '{' for function body`);
         }
-        return {
+        return <ASTNode>{
           type: ASTNodeType.FunctionDeclaration,
           identifier,
           params,
@@ -554,7 +554,7 @@ export class Parser {
         } else {
           this.errors.push(`Expected '{' for function body`);
         }
-        return {
+        return <ASTNode>{
           type: ASTNodeType.FunctionDeclaration,
           params,
           body,
@@ -628,7 +628,7 @@ export class Parser {
     }
     consequence = this.parseBlockStmt();
     if (!this.expectTokenVal("else")) {
-      return {
+      return <ASTNode>{
         type: ASTNodeType.IfElse,
         test,
         consequence,
@@ -641,7 +641,7 @@ export class Parser {
       } else {
         alternate = this.parseIfElse();
       }
-      return {
+      return <ASTNode>{
         type: ASTNodeType.IfElse,
         test,
         consequence,
@@ -672,7 +672,7 @@ export class Parser {
       return null;
     }
     body = this.parseBlockStmt();
-    return {
+    return <ASTNode>{
       type: ASTNodeType.Loop,
       test,
       body,

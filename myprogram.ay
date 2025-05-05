@@ -17,7 +17,7 @@ l arr = [
 This too
 */
 f add(a,b){
-    l c = a + b
+    l c = a + /*yooooo*/ b
     return c
 }
 
