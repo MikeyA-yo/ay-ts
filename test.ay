@@ -22,7 +22,7 @@ l time = today.time()
 //l data = read('semi.js')
 //write('new.js', data)
 print(`${today.getFullDate()} - ${time}`)
-imp@ 'ay, bugs, bigMe' from '/imptest.ay'
+//imp@ 'ay, bugs, bigMe' from '/imptest.ay'
 //bugs()
 print ay
 bigMe.print(bigMe.accomplishment)

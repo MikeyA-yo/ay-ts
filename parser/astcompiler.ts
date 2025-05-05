@@ -87,7 +87,7 @@ export default function compileAST(ast:ASTNode[]) {
 
   return ast.map(compileNode).join("\n");
 }
-// let f = Bun.file("./myprogram.ay");
+// let f = Bun.file("./test.ay");
 // const p = new Parser(await f.text());
 // p.start();
 // console.log(compileAST(p.nodes));
