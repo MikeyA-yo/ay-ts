@@ -484,10 +484,7 @@ export class Parser {
 
         return <ASTNode>{
           type: ASTNodeType.Return,
-          initializer: {
-            type: ASTNodeType.Expression,
-            value: tk,
-          },
+          initializer: tk,
         };
       }
       this.errors.push("Unexpected token after return statement");

@@ -1,4 +1,4 @@
-l a = "my program variables are nicely scoped"
+/*l a = "my program variables are nicely scoped"
 print a
 
 l b = "hello world"
@@ -25,4 +25,4 @@ print(`${today.getFullDate()} - ${time}`)
 //imp@ 'ay, bugs, bigMe' from '/imptest.ay'
 //bugs()
 print ay
-bigMe.print(bigMe.accomplishment)
+bigMe.print(bigMe.accomplishment)*/
