@@ -123,6 +123,8 @@ export enum TokenType {
 export interface Token {
   type: TokenType;
   value: string;
+  line: number;
+  column: number;
 }
 
 export function isKeyword(value: string) {
@@ -150,7 +152,7 @@ function tokenize(line: string) {
     if (line[i] === "*" && nextChar === "/"){
       currentToken += "*/"
       i++ // skip / in */
-      tokens.push({type: currentType, value:currentToken}) 
+      tokens.push({type: currentType, value:currentToken, line: 1, column: 1}) 
       currentType = TokenType.Identifier;
       currentToken = ""
       continue
@@ -160,10 +162,10 @@ function tokenize(line: string) {
     // Detect Windows-style newline \r\n
     if ((line[i] === "\r" && nextChar === "\n") && currentType !== TokenType.MultiLineComment) {
       if (currentType === TokenType.SingleLineComment){
-        tokens.push({type: currentType, value:currentToken})
+        tokens.push({type: currentType, value:currentToken, line: 1, column: 1})
       }
       currentType = TokenType.NewLine
-      tokens.push({ type: currentType, value: "\r\n" });
+      tokens.push({ type: currentType, value: "\r\n", line: 1, column: 1 });
       i++; // Skip the \n part of \r\n  
       currentToken = ""; // Clear currentToken if needed for new lines
       continue;
@@ -171,10 +173,10 @@ function tokenize(line: string) {
     // Detect Mac-style \r and Unix-style \n newlines individually
     else if ((line[i] === "\r" || line[i] === "\n") && currentType !== TokenType.MultiLineComment) {
       if (currentType === TokenType.SingleLineComment){
-        tokens.push({type: currentType, value:currentToken})
+        tokens.push({type: currentType, value:currentToken, line: 1, column: 1})
       }
       currentType = TokenType.NewLine
-      tokens.push({ type: currentType, value: line[i] });
+      tokens.push({ type: currentType, value: line[i], line: 1, column: 1 });
       currentToken = "";
       continue;
     }
@@ -193,7 +195,7 @@ function tokenize(line: string) {
         // extra validation to make sure it's the proper end to the star
         if (currentToken[0] === qChar) {
           currentToken += qChar;
-          tokens.push({ type: currentType, value: currentToken });
+          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
           //cleanup
           currentToken = "";
           sOpen = false;
@@ -232,10 +234,10 @@ function tokenize(line: string) {
           //if it's not the last character and the next character fails the test then we can push it
           if (isKeyword(currentToken)) {
             // checks keyword or identifier
-            tokens.push({ type: TokenType.Keyword, value: currentToken });
+            tokens.push({ type: TokenType.Keyword, value: currentToken, line: 1, column: 1 });
             currentToken = "";
           } else {
-            tokens.push({ type: currentType, value: currentToken });
+            tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
             currentToken = "";
           }
         }
@@ -254,7 +256,7 @@ function tokenize(line: string) {
       }
       if (line.length - 1 >= i + 1) {
         if (!/\s/.test(line[i + 1])) {
-          tokens.push({ type: currentType, value: currentToken });
+          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
           currentToken = "";
         }
       }
@@ -274,7 +276,7 @@ function tokenize(line: string) {
               } else if (line[i] === "=") {
                 currentToken += line[i];
               } else {
-                tokens.push({ type: currentType, value: currentToken });
+                tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
                 currentToken = line[i];
               }
             } else {
@@ -302,7 +304,7 @@ function tokenize(line: string) {
           !/[+*/%=<>&|!?-]/.test(line[i + 1]) &&
           currentType !== TokenType.SingleLineComment 
         ) {
-          tokens.push({ type: currentType, value: currentToken });
+          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
           currentToken = "";
         }
       }
@@ -326,7 +328,7 @@ function tokenize(line: string) {
       }
       if (line.length - 1 >= i + 1) {
         if (!/\d/.test(line[i + 1]) && line[i + 1] !== ".") {
-          tokens.push({ type: currentType, value: currentToken });
+          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
           currentToken = "";
         }
       }
@@ -346,7 +348,7 @@ function tokenize(line: string) {
       } else {
         currentType = TokenType.Punctuation;
         currentToken = line[i];
-        tokens.push({ type: currentType, value: currentToken });
+        tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
         currentToken = "";
       }
     }
@@ -355,9 +357,9 @@ function tokenize(line: string) {
     if (currentType === TokenType.Identifier && isKeyword(currentToken)){
       currentType = TokenType.Keyword
     }
-    tokens.push({ type: currentType, value: currentToken });
+        tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
   }
-  tokens.push({type: TokenType.EOF, value:""})
+  tokens.push({type: TokenType.EOF, value:"", line: 1, column: 1})
   //ignore whitespace token
   return tokens.filter((t) => t.type !== TokenType.Whitespace);
 }
@@ -375,9 +377,41 @@ export class TokenGen {
   constructor(file: string) {
     this.tokenizeLine = tokenize;
     this.lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
-    this.tokens = this.tokenizeLine(file)
+    this.tokens = this.tokenizeWithLineNumbers(file);
     this.currentLine = 0;
     this.currentTokenNo = 0;
+  }
+
+  private tokenizeWithLineNumbers(file: string): Token[] {
+    // Tokenize the entire file at once, then add line numbers
+    const tokens = this.tokenizeLine(file);
+    const lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
+    
+    // Add line numbers to tokens based on their position
+    let currentLine = 1;
+    let currentColumn = 1;
+    let lineIndex = 0;
+    
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      
+      // Update line tracking based on newline tokens
+      if (token.type === TokenType.NewLine) {
+        currentLine++;
+        currentColumn = 1;
+        lineIndex++;
+        continue;
+      }
+      
+      // Assign line and column numbers
+      token.line = currentLine;
+      token.column = currentColumn;
+      
+      // Update column position for next token
+      currentColumn += token.value.length;
+    }
+    
+    return tokens;
   }
   /**
    * next() => token moves to the next non comment token
@@ -462,6 +496,22 @@ export class TokenGen {
    */
   getCurrentToken() {
     return this.tokens[this.currentTokenNo]
+  }
+
+  /**
+   * 
+   * @returns The current line number (1-based)
+   */
+  getCurrentLineNumber() {
+    return this.tokens[this.currentTokenNo]?.line || 1;
+  }
+
+  /**
+   * 
+   * @returns The current column number (1-based)
+   */
+  getCurrentColumnNumber() {
+    return this.tokens[this.currentTokenNo]?.column || 1;
   }
   /**
    * 

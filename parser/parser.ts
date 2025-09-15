@@ -20,6 +20,13 @@ export class Parser {
     this.errors = [];
     this.defines = new Map();
   }
+
+  private addError(message: string) {
+    const line = this.tokenizer.getCurrentLineNumber();
+    const column = this.tokenizer.getCurrentColumnNumber();
+    const errorMsg = `Line ${line}, Column ${column}: ${message}`;
+    this.errors.push(errorMsg);
+  }
   consume() {
     const token = this.tokenizer.getCurrentToken();
     this.tokenizer.next();
@@ -100,7 +107,7 @@ export class Parser {
     const args: ASTNode[] = [];
 
     if (!this.expectTokenVal("(")) {
-      this.errors.push(`SyntaxError: Expected '(' after function identifier '${identifier}'`);
+      this.addError(`SyntaxError: Expected '(' after function identifier '${identifier}'`);
       return null; // Return null if parentheses are not found
     }
 
@@ -120,14 +127,14 @@ export class Parser {
     while (!this.expectTokenVal(")")) {
       const arg = this.parseExpression();
       if (!arg) {
-        this.errors.push(`SyntaxError: Invalid argument in function call '${identifier}'`);
+        this.addError(`SyntaxError: Invalid argument in function call '${identifier}'`);
         break; // Prevent infinite loops if parseExpression fails
       }
       args.push(arg); // Collect the parsed argument
       if (this.expectTokenVal(",")) {
         this.consume(); // Consume the comma separator
       } else if (!this.expectTokenVal(")")) {
-        this.errors.push(`SyntaxError: Expected ',' or ')' in function call '${identifier}'`);
+        this.addError(`SyntaxError: Expected ',' or ')' in function call '${identifier}'`);
         break;
       }
     }
@@ -135,7 +142,7 @@ export class Parser {
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
-      this.errors.push(`SyntaxError: Unmatched parentheses in function call '${identifier}'`);
+      this.addError(`SyntaxError: Unmatched parentheses in function call '${identifier}'`);
     }
 
     return <ASTNode><unknown>{
@@ -162,7 +169,7 @@ export class Parser {
 
       let element = this.parseExpression();
       if (!element) {
-        this.errors.push(`SyntaxError: Invalid array element`);
+        this.addError(`SyntaxError: Invalid array element`);
         break;
       }
       elements.push(element);
@@ -170,7 +177,7 @@ export class Parser {
       if (this.expectTokenVal(",")) {
         this.consume(); // Consume the comma separator
       } else if (!this.expectTokenVal("]")) {
-        this.errors.push(`SyntaxError: Expected ',' or ']' in array`);
+        this.addError(`SyntaxError: Expected ',' or ']' in array`);
         break;
       }
     }
@@ -178,7 +185,7 @@ export class Parser {
     if (this.expectTokenVal("]")) {
       this.consume(); // Consume the closing ']'
     } else {
-      this.errors.push(`SyntaxError: Unmatched brackets in array`);
+      this.addError(`SyntaxError: Unmatched brackets in array`);
     }
 
     return <ASTNode><unknown>{ elements };
@@ -531,7 +538,7 @@ export class Parser {
         if (this.expectTokenVal("{")) {
           body = this.parseBlockStmt();
         } else {
-          this.errors.push(`Expected '{' for function body`);
+          this.addError(`Expected '{' for function body`);
         }
         return <ASTNode>{
           type: ASTNodeType.FunctionDeclaration,
@@ -540,7 +547,8 @@ export class Parser {
           body,
         };
       } else {
-        this.errors.push(`Expected '(' at function declaration`);
+        this.addError(`Expected '(' at function declaration`);
+        return null; // Stop parsing this function
       }
     } else {
       // potential error, will assert at the end,if the function isn't called
@@ -549,7 +557,7 @@ export class Parser {
         if (this.expectTokenVal("{")) {
           body = this.parseBlockStmt();
         } else {
-          this.errors.push(`Expected '{' for function body`);
+          this.addError(`Expected '{' for function body`);
         }
         return <ASTNode>{
           type: ASTNodeType.FunctionDeclaration,
@@ -557,7 +565,7 @@ export class Parser {
           body,
         };
       } else {
-        this.errors.push(`Expected '(' at anonymouds or function declaration`);
+        this.addError(`Expected '(' at anonymouds or function declaration`);
       }
     }
   }
