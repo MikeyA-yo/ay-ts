@@ -270,3 +270,11 @@ for (let i = 0; (i < 8); i++) {
 print(i)
 }
 foo(20)
+function randPrint() {
+if ((d > 6)) {
+print(0.5 < d, d)
+} else {
+print(d)
+}
+}
+randPrint()
