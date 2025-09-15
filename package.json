@@ -1,8 +1,6 @@
 {
   "dependencies": {
-    "@types/acorn": "^6.0.0",
     "@types/node": "^20.11.17",
-    "acorn": "^8.11.3",
     "typescript": "^5.3.3"
   },
   "name": "ay",

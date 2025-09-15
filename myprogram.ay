@@ -22,13 +22,7 @@ f add(a,b){
 }
 
 
-if (a == b) {
-    return true;
-} else if ( c == b){
-    return "true"
-}else{
-    return false
-}
+
 f foo(a) {
     if (a > 0) {
         l result = add(a, a);
