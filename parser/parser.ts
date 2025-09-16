@@ -26,7 +26,6 @@ export class Parser {
     const column = this.tokenizer.getCurrentColumnNumber();
     const errorMsg = `Line ${line}, Column ${column}: ${message}`;
     this.errors.push(errorMsg);
-    this.consume()
   }
   consume() {
     const token = this.tokenizer.getCurrentToken();

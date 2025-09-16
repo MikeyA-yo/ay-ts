@@ -53,7 +53,6 @@ if (parser.errors.length > 0) {
 }
 
 const ast = parser.nodes;
-console.log(ast)
 const compiled = compileAST(ast);
 const output = `
 ${arrF}

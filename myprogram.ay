@@ -1,7 +1,6 @@
 l a = "my program variables are nicely scoped"; 
 l b = "hello world"
-
-l c = 3 + 3
+l c = 6 + 3
 
 l d = round(rand() * 12)
 
