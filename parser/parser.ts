@@ -26,6 +26,7 @@ export class Parser {
     const column = this.tokenizer.getCurrentColumnNumber();
     const errorMsg = `Line ${line}, Column ${column}: ${message}`;
     this.errors.push(errorMsg);
+    this.consume()
   }
   consume() {
     const token = this.tokenizer.getCurrentToken();
@@ -451,9 +452,13 @@ export class Parser {
         if (this.expectTokenVal(tokens.grT)) {
           this.consume();
           initializer = this.parseLiteral();
+          this.defines.set(identifier, initializer.value);
+        }else{
+          this.addError(`Unexpected token: ${this.consume().value}, expected >`)
         }
+      }else{
+        this.addError(`Unexpected token: ${this.consume().value}, expected def chain ->`)
       }
-      this.defines.set(identifier, initializer.value);
       return <ASTNode>{
         type: ASTNodeType.DefDecl,
         identifier,
