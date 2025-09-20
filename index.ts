@@ -32,6 +32,7 @@ const printF = readFileSync("./functions/print.js", "utf-8");
 const fsF = readFileSync("./functions/fs.js", "utf-8");
 const dateF = readFileSync("./functions/date.js", "utf-8");
 const timeF = readFileSync("./functions/timer.js", "utf-8");
+const httpF = readFileSync("./functions/http.js", "utf-8");
 // const mathFancy = `
 //   ██╗   ██╗███████╗██████╗ ██╗   ██╗███████╗██████╗
 //   ╚██╗ ██╔╝██╔════╝██╔══██╗╚██╗ ██╔╝██╔════╝██╔══██╗
@@ -63,6 +64,7 @@ ${fsF}
 ${dateF}
 ${timeF}
 ${compiled}
+${httpF}
 `;
 const outputFileName = fileNameParts[0] + ".js";
 console.log(`Compiled ${fileName} to ${outputFileName}`);

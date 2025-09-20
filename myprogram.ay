@@ -48,3 +48,11 @@ f randPrint(){
 }
 randPrint()
 
+   l promise = httpGet("https://bizflip-frontend-eta.vercel.app/", "text")
+  f onSuccess(res){
+    print(res)
+  }
+  f onErr(e){
+    print(e)
+  }
+ awaitPromise(promise, onSuccess, onErr)
