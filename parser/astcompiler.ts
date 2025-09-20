@@ -25,6 +25,10 @@ export default function compileAST(ast:ASTNode[]) {
         } else {
           return "return;";
         }
+      case ASTNodeType.Break:
+        return "break;";
+      case ASTNodeType.Continue:
+        return "continue;";
       case ASTNodeType.IfElse:
         return compileIfElse(node);
       case ASTNodeType.Loop:
@@ -34,7 +38,10 @@ export default function compileAST(ast:ASTNode[]) {
       default:
         // Binary, Unary, Array, etc.
         if (node.operator && node.left !== undefined && node.right !== undefined) {
-          return `${compileNode(node.left)} ${node.operator} ${compileNode(node.right)}`;
+          // Handle string concatenation and other binary operations
+          const left = compileNode(node.left);
+          const right = compileNode(node.right);
+          return `${left} ${node.operator} ${right}`;
         }
         if (node.postop && node.identifier) {
           return `${node.identifier}${node.postop};`;

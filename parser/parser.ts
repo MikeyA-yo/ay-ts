@@ -27,10 +27,27 @@ export class Parser {
     const errorMsg = `Line ${line}, Column ${column}: ${message}`;
     this.errors.push(errorMsg);
   }
+
+  // Resolve defined aliases - replace any defined keyword with its actual value
+  private resolveDefine(value: string): string {
+    return this.defines.has(value) ? this.defines.get(value)! : value;
+  }
+
+  // Enhanced token value checking that resolves defines
+  private getResolvedTokenValue(): string {
+    const token = this.tokenizer.getCurrentToken();
+    if (!token) return "";
+    return this.resolveDefine(token.value);
+  }
   consume() {
     const token = this.tokenizer.getCurrentToken();
+    // Create a new token with resolved value if it's a define
+    const resolvedToken = {
+      ...token,
+      value: this.resolveDefine(token.value)
+    };
     this.tokenizer.next();
-    return token;
+    return resolvedToken;
   }
   expectPeek(t: TokenType) {
     let pk = this.tokenizer.peek();
@@ -59,7 +76,9 @@ export class Parser {
     if (!pk) {
       return false;
     }
-    if (pk.value === v) {
+    // Check both the original value and the resolved value (for defines)
+    const resolvedValue = this.resolveDefine(pk.value);
+    if (pk.value === v || resolvedValue === v) {
       return true;
     } else {
       return false;
@@ -70,7 +89,9 @@ export class Parser {
     if (!tk) {
       return false;
     }
-    if (tk.value === v) {
+    // Check both the original value and the resolved value (for defines)
+    const resolvedValue = this.resolveDefine(tk.value);
+    if (tk.value === v || resolvedValue === v) {
       return true;
     } else {
       return false;
@@ -247,6 +268,7 @@ export class Parser {
       if (
         !this.expectToken(TokenType.Identifier) &&
         !this.expectToken(TokenType.Literal) &&
+        !this.expectToken(TokenType.StringLiteral) &&
         !this.expectTokenVal("(")
       ) {
         this.errors.push(`Invalid expression after operator '${op}'`);
@@ -265,7 +287,7 @@ export class Parser {
         //array values and function call exprs end
         this.expectPeekVal(",")
       ) {
-        right = this.consume().value; // Simple right-hand expression
+        right = this.consume().value; // Simple right-hand expression (now resolved)
         if (!this.expectTokenVal(")") && !this.expectTokenVal(",")) {
           this.consume();
         }
@@ -503,20 +525,26 @@ export class Parser {
     }
   }
   parseBreakNCont() {
+    const keyword = this.consume(); // Get the break or continue keyword
+    
     if (
-      this.expectPeek(TokenType.NewLine) ||
-      this.expectPeekVal(";") ||
-      this.expectPeekVal("}")
+      this.expectToken(TokenType.NewLine) ||
+      this.expectToken(TokenType.EOF) ||
+      this.expectTokenVal(";") ||
+      this.expectTokenVal("}")
     ) {
-      let rtToken = this.consume();
+      // Valid termination for break/continue
+      if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+        this.consume();
+      }
+      
       return <ASTNode>{
-        type: ASTNodeType.Return,
-        value: rtToken.value,
+        type: keyword.value === "break" ? ASTNodeType.Break : ASTNodeType.Continue,
+        value: keyword.value,
       };
     } else {
-      let rtToken = this.consume();
       this.errors.push(
-        `Unexpected token after ${rtToken.value} keyword: ${
+        `Unexpected token after ${keyword.value} keyword: ${
           this.tokenizer.getCurrentToken()
             ? this.tokenizer.getCurrentToken().value
             : "End of file"
@@ -524,8 +552,8 @@ export class Parser {
       );
       this.tokenizer.toNewLine();
       return <ASTNode>{
-        type: ASTNodeType.Return,
-        value: rtToken.value,
+        type: keyword.value === "break" ? ASTNodeType.Break : ASTNodeType.Continue,
+        value: keyword.value,
       };
     }
   }
@@ -731,119 +759,135 @@ export class Parser {
   checkParseReturn() {
     let baseToken = this.tokenizer.getCurrentToken();
     let node;
-    switch (baseToken.type) {
-      case TokenType.Keyword:
-        switch (baseToken.value) {
-          case tokens.l:
-            node = this.parseVariable();
-            break;
-          case "def":
-            node = this.parseDefine();
-            break;
-          case "return":
-            node = this.parseReturn();
-            break;
-          case "break":
-          case "continue":
-            node = this.parseBreakNCont();
-
-            break;
-          case "f":
-            node = this.parseFunc();
-            break;
-          case "if":
-            node = this.parseIfElse();
-            break;
-          case "while":
-            node = this.parseWhileLoop();
-            break;
-          case "for":
-            node = this.parseForLoop()  
-            break
-          default:
+    
+    // First check if this is a keyword, then resolve any defines
+    const resolvedValue = this.resolveDefine(baseToken.value);
+    
+    // Check if the resolved value is a keyword, even if the original wasn't
+    const isResolvedKeyword = baseToken.type === TokenType.Keyword || 
+                             (baseToken.type === TokenType.Identifier && this.defines.has(baseToken.value));
+    
+    if (isResolvedKeyword) {
+      switch (resolvedValue) {
+        case tokens.l:
+          node = this.parseVariable();
+          break;
+        case "def":
+          node = this.parseDefine();
+          break;
+        case "return":
+          node = this.parseReturn();
+          break;
+        case "break":
+        case "continue":
+          node = this.parseBreakNCont();
+          break;
+        case "f":
+          node = this.parseFunc();
+          break;
+        case "if":
+          node = this.parseIfElse();
+          break;
+        case "while":
+          node = this.parseWhileLoop();
+          break;
+        case "for":
+          node = this.parseForLoop()  
+          break
+        default:
           //hehe
-        }
-        break;
-      case TokenType.Punctuation:
-        if (baseToken.value === ";") {
+      }
+    } else {
+      switch (baseToken.type) {
+        case TokenType.Punctuation:
+          if (baseToken.value === ";") {
+            this.tokenizer.next();
+          } else {
+            this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+            this.tokenizer.next();
+          }
+          break;
+        case TokenType.NewLine:
           this.tokenizer.next();
-        } else {
+          break;
+        case TokenType.Identifier:
+        case TokenType.Literal:
+        case TokenType.StringLiteral:
+          node = this.parseExpression();
+          break;
+        case TokenType.Operator:
+          if (
+            this.expectTokenVal(tokens.not) ||
+            this.expectTokenVal(tokens.sub) ||
+            this.expectTokenVal("--") ||
+            this.expectTokenVal("++")
+          ) {
+            let nodeO = this.parseExpression();
+            nodeO && this.nodes.push(nodeO);
+          } else {
+            this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+            this.tokenizer.next();
+          }
+          break;
+        default:
           this.errors.push(`Unexpected statement start: ${baseToken.value}`);
           this.tokenizer.next();
-        }
-        break;
-      case TokenType.NewLine:
-        this.tokenizer.next();
-        break;
-      case TokenType.Identifier:
-      case TokenType.Literal:
-      case TokenType.StringLiteral:
-        node = this.parseExpression();
-        break;
-      case TokenType.Operator:
-        if (
-          this.expectTokenVal(tokens.not) ||
-          this.expectTokenVal(tokens.sub) ||
-          this.expectTokenVal("--") ||
-          this.expectTokenVal("++")
-        ) {
-          let nodeO = this.parseExpression();
-          nodeO && this.nodes.push(nodeO);
-        } else {
-          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
-          this.tokenizer.next();
-        }
-        break;
-      default:
-        this.errors.push(`Unexpected statement start: ${baseToken.value}`);
-        this.tokenizer.next();
-      //Syntax Error Likely
+        //Syntax Error Likely
+      }
     }
     return node;
   }
   checkAndParse() {
     let baseToken = this.tokenizer.getCurrentToken();
-    switch (baseToken.type) {
-      case TokenType.Keyword:
-        switch (baseToken.value) {
-          case tokens.l:
-            let nodeV = this.parseVariable();
-            nodeV && this.nodes.push(nodeV);
-            break;
-          case "def":
-            let nodeD = this.parseDefine();
-            nodeD && this.nodes.push(nodeD);
-            break;
-          case "return":
-            let nodeR = this.parseReturn();
-            nodeR && this.nodes.push(nodeR);
-            break;
-          case "break":
-          case "continue":
-            let nodeBC = this.parseBreakNCont();
-            nodeBC && this.nodes.push(nodeBC);
-            break;
-          case "f":
-            let nodeF = this.parseFunc();
-            nodeF && this.nodes.push(nodeF);
-            break;
-          case "if":
-            let nodeIf = this.parseIfElse();
-            nodeIf && this.nodes.push(nodeIf);
-            break;
-          case "while":
-            let nodeW = this.parseWhileLoop();
-            nodeW && this.nodes.push(nodeW);
-            break;
-          case "for":
-            let nodeFo = this.parseForLoop();
-            nodeFo && this.nodes.push(nodeFo);
-            break;   
-          default:
-            this.consume();
+    
+    // First check if this is a keyword, then resolve any defines
+    const resolvedValue = this.resolveDefine(baseToken.value);
+    
+    // Check if the resolved value is a keyword, even if the original wasn't
+    const isResolvedKeyword = baseToken.type === TokenType.Keyword || 
+                             (baseToken.type === TokenType.Identifier && this.defines.has(baseToken.value));
+    
+    if (isResolvedKeyword) {
+      switch (resolvedValue) {
+        case tokens.l:
+          let nodeV = this.parseVariable();
+          nodeV && this.nodes.push(nodeV);
+          break;
+        case "def":
+          let nodeD = this.parseDefine();
+          nodeD && this.nodes.push(nodeD);
+          break;
+        case "return":
+          let nodeR = this.parseReturn();
+          nodeR && this.nodes.push(nodeR);
+          break;
+        case "break":
+        case "continue":
+          let nodeBC = this.parseBreakNCont();
+          nodeBC && this.nodes.push(nodeBC);
+          break;
+        case "f":
+          let nodeF = this.parseFunc();
+          nodeF && this.nodes.push(nodeF);
+          break;
+        case "if":
+          let nodeIf = this.parseIfElse();
+          nodeIf && this.nodes.push(nodeIf);
+          break;
+        case "while":
+          let nodeW = this.parseWhileLoop();
+          nodeW && this.nodes.push(nodeW);
+          break;
+        case "for":
+          let nodeFo = this.parseForLoop();
+          nodeFo && this.nodes.push(nodeFo);
+          break;   
+        default:
+          this.consume();
           //hehe
-        }
-        break;
+      }
+    } else {
+      switch (baseToken.type) {
       case TokenType.Punctuation:
         if (baseToken.value === ";") {
           this.tokenizer.next();
@@ -879,6 +923,7 @@ export class Parser {
         this.errors.push(`Unexpected statement start: ${baseToken.value}`);
         this.tokenizer.next();
       //Syntax Error Likely
+      }
     }
   }
   start() {

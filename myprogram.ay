@@ -10,17 +10,54 @@ l arr = [
     5,
     7,
 ]
-//ignored hopefully
-/*
 
-This too
+/*
+AY Language - Comprehensive Example Program
+This file demonstrates all major features of the AY programming language
+
+=== Variable Declarations ===
+Variables are declared with 'l' keyword and are nicely scoped
+
+=== Comments Support ===
 */
+/*ignored hopefully*/
+/*
+This too is ignored
+Multi-line comments work perfectly
+*/
+
 f add(a,b){
     l c = a + /*yooooo*/ b
     return c
 }
 
+f greet(name) {
+    l greeting = "Hello, " + name + "!"
+    return greeting
+}
 
+l userName = "Alice"
+l welcomeMessage = greet(userName)
+print(welcomeMessage)
+
+f factorial(n) {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+f fibonacci(n) {
+    if (n <= 1) {
+        return n
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+l factResult = factorial(5)
+l fibResult = fibonacci(8)
+print(factResult)
+print(fibResult)
 
 f foo(a) {
     if (a > 0) {
@@ -28,6 +65,7 @@ f foo(a) {
         return result;
     }
 }
+
 l i = 0
 while ( i < 5){
     print(i)
@@ -37,22 +75,63 @@ while ( i < 5){
 for (l i = 0; i < 8; i++){
     print(i);
 }
-foo(20)
+
+l doubleResult = foo(20)
+print(doubleResult)
 
 f randPrint(){
     if (d > 6){
-      print(0.5 < d, d)
+      l comparison = 0.5 < d
+      print(comparison)
+      print(d)
     }else{
         print(d)
     }
 }
 randPrint()
+
 l testingVar
- l promise = httpGet("https://restcountries.com/v3.1/all?fields=name,flags");
+
+def var -> l
+def fn -> f
+def brk -> break
+def cnt -> continue
+
+var aliasedVariable = "This was declared using var alias!"
+print(aliasedVariable)
+
+fn aliasedFunction(x, y) {
+    var sum = x + y
+    return sum
+}
+
+var aliasResult = aliasedFunction(10, 15)
+print(aliasResult)
+
+var counter = 0
+while (counter < 10) {
+    print(counter)
+    counter++
+    if (counter == 3) {
+        brk
+    }
+}
+
+l numbers = [1, 2, 3, 4, 5]
+print(numbers, len(numbers))
+
+/*l promise = httpGet("https://restcountries.com/v3.1/all?fields=name,flags");
   
-  f onErr(e){
+f onErr(e){
     print(e)
-  }
- awaitPromise(promise, f (res){
+}
+
+awaitPromise(promise, f (res){
     print(res)
-  }, onErr)
+}, onErr)*/
+
+l complexCalc = factorial(4) + fibonacci(6)
+print(complexCalc)
+
+l mathResult = add(factorial(3), fibonacci(5))
+print(mathResult)

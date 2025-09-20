@@ -65,3 +65,11 @@ function pop(arr) {
     }
     return arr.pop();
 }
+
+function len(arr) {
+    if (!Array.isArray(arr)) {
+        console.error('Input must be an array but got,', typeof arr, 'instead for this function');
+        process.exit(1)     
+    }
+    return arr.length;  
+}

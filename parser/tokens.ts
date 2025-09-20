@@ -230,7 +230,7 @@ function tokenize(line: string) {
         currentToken = line[i];
       } //checks if it's the last character or not, passes if not last char
       if (line.length - 1 >= i + 1) {
-        if (!/[a-zA-Z_@]/.test(line[i + 1])) {
+        if (!/[a-zA-Z_@0-9]/.test(line[i + 1])) {
           //if it's not the last character and the next character fails the test then we can push it
           if (isKeyword(currentToken)) {
             // checks keyword or identifier
@@ -270,7 +270,11 @@ function tokenize(line: string) {
       if (currentToken.length > 0 && /[+*/%=<>&|!?-]/.test(currentToken)) {
         switch (currentToken.length) {
           case 1:
-            if (currentToken !== "/" && currentToken !== "^") {
+            if (currentToken === "/" && line[i] === "/") {
+              // This is a single line comment //
+              currentType = TokenType.SingleLineComment;
+              currentToken += line[i];
+            } else if (currentToken !== "^") {
               if (currentToken === line[i]) {
                 currentToken += line[i];
               } else if (line[i] === "=") {
@@ -280,8 +284,8 @@ function tokenize(line: string) {
                 currentToken = line[i];
               }
             } else {
-              currentType = TokenType.SingleLineComment;
-              currentToken += line[i];
+              tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
+              currentToken = line[i];
             }
             break;
           case 2:
@@ -315,21 +319,34 @@ function tokenize(line: string) {
       currentType !== TokenType.SingleLineComment &&
       currentType !== TokenType.MultiLineComment
     ) {
-      currentType = TokenType.Literal;
-      if (
-        currentToken.length > 0 &&
-        (/\d/.test(currentToken) || currentToken.endsWith("."))
-      ) {
-        if (/\d/.test(currentToken) || currentToken.endsWith(".")) {
-          currentToken += line[i];
+      // If we're already building an identifier, add the digit to it
+      if (currentType === TokenType.Identifier) {
+        currentToken += line[i];
+        // Check if next character would end the identifier
+        if (line.length - 1 >= i + 1) {
+          if (!/[a-zA-Z_@0-9]/.test(line[i + 1])) {
+            tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
+            currentToken = "";
+          }
         }
       } else {
-        currentToken = line[i];
-      }
-      if (line.length - 1 >= i + 1) {
-        if (!/\d/.test(line[i + 1]) && line[i + 1] !== ".") {
-          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
-          currentToken = "";
+        // Start a new literal (number)
+        currentType = TokenType.Literal;
+        if (
+          currentToken.length > 0 &&
+          (/\d/.test(currentToken) || currentToken.endsWith("."))
+        ) {
+          if (/\d/.test(currentToken) || currentToken.endsWith(".")) {
+            currentToken += line[i];
+          }
+        } else {
+          currentToken = line[i];
+        }
+        if (line.length - 1 >= i + 1) {
+          if (!/\d/.test(line[i + 1]) && line[i + 1] !== ".") {
+            tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
+            currentToken = "";
+          }
         }
       }
     } else if (
@@ -360,8 +377,8 @@ function tokenize(line: string) {
         tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
   }
   tokens.push({type: TokenType.EOF, value:"", line: 1, column: 1})
-  //ignore whitespace token
-  return tokens.filter((t) => t.type !== TokenType.Whitespace);
+  //ignore whitespace and comment tokens
+  return tokens.filter((t) => t.type !== TokenType.Whitespace && t.type !== TokenType.SingleLineComment && t.type !== TokenType.MultiLineComment);
 }
 
 /**
