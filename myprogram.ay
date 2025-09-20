@@ -47,12 +47,12 @@ f randPrint(){
     }
 }
 randPrint()
-
-   l promise = httpGet("https://bizflip-frontend-eta.vercel.app/", "text")
-  f onSuccess(res){
-    print(res)
-  }
+l testingVar
+ l promise = httpGet("https://restcountries.com/v3.1/all?fields=name,flags");
+  
   f onErr(e){
     print(e)
   }
- awaitPromise(promise, onSuccess, onErr)
+ awaitPromise(promise, f (res){
+    print(res)
+  }, onErr)

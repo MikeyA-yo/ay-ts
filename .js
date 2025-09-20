@@ -278,14 +278,14 @@ print(d)
 }
 }
 randPrint()
-let promise = httpGet("https://bizflip-frontend-eta.vercel.app/", "text");
-function onSuccess(res) {
-print(res)
-}
+let testingVar;
+let promise = httpGet("https://restcountries.com/v3.1/all?fields=name,flags");
 function onErr(e) {
 print(e)
 }
-awaitPromise(promise, onSuccess, onErr)
+awaitPromise(promise, function (res) {
+print(res)
+}, onErr)
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 
@@ -483,15 +483,7 @@ function getHttpStatusMessage(status) {
   return statusMessages[status] || "Unknown Status";
 }
 
-// Request Timeout Helper
-function withHttpTimeout(promise, timeout) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Request timeout")), timeout || 5000)
-    ),
-  ]);
-}
+
 
 // HTTP Logger
 function logHttpRequest(method, url, data) {
@@ -537,15 +529,13 @@ function awaitAll(promises, onSuccess, onError) {
 
 
 
-
-
-
 // Simple promise logger
-function logPromise(promise, label) {
+function logPromise(promise, label, varName) {
   console.log(`Starting promise: ${label || "Unnamed"}`);
   return promise
     .then((result) => {
       console.log(`Promise resolved: ${label || "Unnamed"}`, result);
+      varName = result;
       return result;
     })
     .catch((error) => {
@@ -553,4 +543,3 @@ function logPromise(promise, label) {
       return { error: error.message, success: false };
     });
 }
-

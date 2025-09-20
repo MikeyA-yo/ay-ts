@@ -8,7 +8,11 @@ export default function compileAST(ast:ASTNode[]) {
     if (!node) return "";
     switch (node.type) {
       case ASTNodeType.VariableDeclaration:
-        return `let ${node.identifier} = ${compileNode(node.initializer)};`;
+        if (node.initializer) {
+          return `let ${node.identifier} = ${compileNode(node.initializer)};`;
+        } else {
+          return `let ${node.identifier};`;
+        } 
       case ASTNodeType.Literal:
         return node.value;
       case ASTNodeType.FunctionDeclaration:
