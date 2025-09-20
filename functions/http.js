@@ -195,15 +195,7 @@ function getHttpStatusMessage(status) {
   return statusMessages[status] || "Unknown Status";
 }
 
-// Request Timeout Helper
-function withHttpTimeout(promise, timeout) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Request timeout")), timeout || 5000)
-    ),
-  ]);
-}
+
 
 // HTTP Logger
 function logHttpRequest(method, url, data) {
@@ -239,60 +231,15 @@ function awaitPromiseWithTimeout(promise, onSuccess, onError, timeout) {
     .catch(onError);
 }
 
-// Safe promise execution with default value
-function safeAwait(promise, onSuccess, onError, defaultValue) {
-  return promise.then(onSuccess).catch(onError);
-}
+
 
 // Promise chain helper - run multiple promises
 function awaitAll(promises, onSuccess, onError) {
   return Promise.all(promises).then(onSuccess).catch(onError);
 }
 
-// Retry promise with simple retry logic
-function retryAwait(promiseFn, onSuccess, onError, maxRetries) {
-  let attempts = 0;
 
-  function attempt() {
-    return promiseFn().then(onSuccess).catch(onError);
-  }
 
-  return attempt();
-}
-
-// Promise result processor - simple transformation
-function processPromiseResult(promise, varName, processor) {
-  return promise
-    .then((result) => {
-      if (processor && typeof processor === "function") {
-        varName = processor(result);
-        return varName;
-      }
-      return result;
-    })
-    .catch((error) => ({ error: error.message, success: false }));
-}
-
-// Conditional promise execution
-function conditionalAwait(condition, promiseFn, varName, fallbackValue) {
-  if (condition) {
-    return promiseFn().then((result) => {
-      varName = result;
-      return result;
-    });
-  }
-  return Promise.resolve(fallbackValue || "Condition not met");
-}
-
-// Promise status checker
-function checkPromiseStatus(promise, varName) {
-  return promise
-    .then((result) => {
-      varName = result;
-      return { status: "resolved", result: result };
-    })
-    .catch((error) => ({ status: "rejected", error: error.message }));
-}
 
 // Simple promise logger
 function logPromise(promise, label, varName) {
@@ -306,69 +253,5 @@ function logPromise(promise, label, varName) {
     .catch((error) => {
       console.error(`Promise rejected: ${label || "Unnamed"}`, error.message);
       return { error: error.message, success: false };
-    });
-}
-
-// Simple Promise Assignment Utilities - The core functionality you wanted
-
-// Assign promise result to a variable (functional approach)
-function assignPromise(promise, assignFn, varName) {
-  return promise
-    .then((result) => {
-      assignFn(result);
-      varName = result;
-      return result;
-    })
-    .catch((error) => {
-      const errorResult = { error: error.message, success: false };
-      assignFn(errorResult);
-      return errorResult;
-    });
-}
-
-// Simple promise assignment with error handling
-function assignPromiseSafe(promise, assignFn, varName, defaultValue) {
-  return promise
-    .then((result) => {
-      assignFn(result);
-      return result;
-    })
-    .catch((error) => {
-      const fallback = defaultValue || { error: error.message, success: false };
-      assignFn(fallback);
-      return fallback;
-    });
-}
-
-// Promise assignment with timeout
-function assignPromiseTimeout(promise, assignFn, timeout) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Promise timeout")), timeout || 5000)
-    ),
-  ])
-    .then((result) => {
-      assignFn(result);
-      return result;
-    })
-    .catch((error) => {
-      const errorResult = { error: error.message, success: false };
-      assignFn(errorResult);
-      return errorResult;
-    });
-}
-
-// Multiple promise assignment
-function assignAllPromises(promises, assignFn) {
-  return Promise.all(promises)
-    .then((results) => {
-      assignFn(results);
-      return results;
-    })
-    .catch((error) => {
-      const errorResult = { error: error.message, success: false };
-      assignFn(errorResult);
-      return errorResult;
     });
 }
