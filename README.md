@@ -4,6 +4,14 @@
 AY is a simple, custom programming language designed for experimentation and learning. This compiler translates AY programs into JavaScript, allowing you to run your AY code in any JavaScript environment.
 
 ## Installation
+
+### Option 1: Install from npm (Recommended)
+Install the AY compiler globally using npm:
+```bash
+npm install -g ayscript
+```
+
+### Option 2: Install from source
 1. Clone the repository:
    ```bash
    git clone https://github.com/MikeyA-yo/ay-ts.git
@@ -16,13 +24,31 @@ AY is a simple, custom programming language designed for experimentation and lea
    ```bash
    npm install
    ```
+4. Build the project:
+   ```bash
+   npx tsc
+   ```
 
 ## Usage
 To compile and run an AY program:
+
+### Using the global installation:
 1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 2. Compile the program:
    ```bash
-   node index.js myprogram.ay
+   ayc myprogram.ay
+   ```
+3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
+4. Run the generated JavaScript file using Node.js:
+   ```bash
+   node myprogram.js
+   ```
+
+### Using the source installation:
+1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
+2. Compile the program:
+   ```bash
+   node dist/index.js myprogram.ay
    ```
 3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
 4. Run the generated JavaScript file using Node.js:

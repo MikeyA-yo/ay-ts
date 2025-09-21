@@ -3,8 +3,8 @@
     "@types/node": "^20.11.17",
     "typescript": "^5.3.3"
   },
-  "name": "ay",
-  "version": "1.0.0",
+  "name": "ayscript",
+  "version": "1.0.01",
   "main": "./dist/index.js",
   "devDependencies": {},
   "scripts": {
