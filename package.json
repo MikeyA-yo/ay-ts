@@ -4,10 +4,17 @@
     "typescript": "^5.3.3"
   },
   "name": "ayscript",
-  "version": "1.0.01",
+  "version": "1.0.2",
   "main": "./dist/index.js",
+  "files": [
+    "dist/",
+    "functions/",
+    "README.md"
+  ],
   "devDependencies": {},
   "scripts": {
+    "build": "npx tsc",
+    "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin":{
