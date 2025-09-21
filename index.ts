@@ -1,8 +1,10 @@
+#!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
 import { Parser } from "./parser/parser";
 import compileAST from "./parser/astcompiler";
 
 const fileName = process.argv[2];
+const VERSION = "1.0.0";
 const AY_FancyName = `
    █████╗ ██╗   ██╗
   ██╔══██╗╚██╗ ██╔╝
@@ -11,10 +13,20 @@ const AY_FancyName = `
   ██║  ██║   ██║   
   ╚═╝  ╚═╝   ╚═╝   
 `
-const welcome = `Welcome to ${AY_FancyName} language compiler!\n\nUsage: ayc <filename>\n\nExample: ayc test.ay\n\n`;
+const welcome = `${AY_FancyName}
+AY Programming Language Compiler v${VERSION}
+
+A modern, expressive programming language that compiles to JavaScript.
+Features: Variables (l), Functions (f), Comments, Control Flow, Async Operations, and more!
+
+Usage: ayc <filename>
+Example: ayc myprogram.ay
+
+Visit: https://github.com/MikeyA-yo/ay-ts
+`;
 if (!fileName) {
   console.error(welcome);
-  console.error("No filename provided");
+  console.error("⚠️  No filename provided");
   process.exit(1);
 }
 
@@ -22,7 +34,7 @@ const fileText = readFileSync(fileName, "utf-8");
 const fileNameParts = fileName.split(".");
 if (fileNameParts[fileNameParts.length - 1] !== "ay") {
   console.error(welcome);
-  console.error("Invalid file extension");
+  console.error("⚠️  Invalid file extension. Please use .ay files only.");
   process.exit(1);
 }
 const arrF = readFileSync("./functions/arr.js", "utf-8");
@@ -67,7 +79,8 @@ ${compiled}
 ${httpF}
 `;
 const outputFileName = fileNameParts[0] + ".js";
-console.log(`Compiled ${fileName} to ${outputFileName}`);
+console.log(`✅ Compiled ${fileName} to ${outputFileName}`);
+console.log(`🚀 Run with: node ${outputFileName}`);
 writeFileSync(outputFileName, output);
 // console.log(`Running ${outputFileName}...`);
 // eval(output);

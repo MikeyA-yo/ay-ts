@@ -5,13 +5,13 @@
   },
   "name": "ay",
   "version": "1.0.0",
-  "main": "./new.js",
+  "main": "./dist/index.js",
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin":{
-    "ay" : "./new.js"
+    "ayc" : "./dist/index.js"
   },
   "keywords": [
     "AY",
@@ -21,5 +21,5 @@
   ],
   "author": "Oluwatola Ayomide, CHO inc",
   "license": "ISC",
-  "description": "A just in time compiler, for my AY language still experimental tho"
+  "description": "A  compiler, for my AY language, built with Typescript and Nodejs"
 }
