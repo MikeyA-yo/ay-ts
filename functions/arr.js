@@ -47,7 +47,8 @@ function splice(arr, start, deleteCount, ...items) {
         console.error('Input must be an array');
         process.exit(1)
     }
-    return arr.splice(start, deleteCount,...items);
+    arr.splice(start, deleteCount,...items);
+    return arr;
 }
 
 function push(arr,...items) {
@@ -55,7 +56,8 @@ function push(arr,...items) {
         console.error('Input must be an array');
         process.exit(1)
     }
-    return arr.push(...items);
+    arr.push(...items);
+    return arr;
 }
 
 function pop(arr) {
@@ -63,7 +65,8 @@ function pop(arr) {
         console.error('Input must be an array but got,', typeof arr, 'instead for this function');
         process.exit(1)     
     }
-    return arr.pop();
+    arr.pop();
+    return arr;
 }
 
 function len(arr) {

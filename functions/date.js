@@ -97,3 +97,10 @@ const isValidDateFormat = (date) => {
   const d = new Date(date);
   return d instanceof Date && !isNaN(d);
 };
+
+function now(){
+  return new Date();
+}
+function timestamp(){
+  return Date.now();
+}
