@@ -4,7 +4,7 @@
     "typescript": "^5.3.3"
   },
   "name": "ayscript",
-  "version": "1.0.3",
+  "version": "1.0.31",
   "main": "./dist/index.js",
   "files": [
     "dist/",
@@ -22,9 +22,10 @@
   },
   "keywords": [
     "AY",
-    "JIT compiler",
+    "Transpiler",
     "nodejs",
-    "Typescript"
+    "Typescript",
+    "Lazy language"
   ],
   "author": "Oluwatola Ayomide, CHO inc",
   "license": "ISC",

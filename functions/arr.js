@@ -70,9 +70,24 @@ function pop(arr) {
 }
 
 function len(arr) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array but got,', typeof arr, 'instead for this function');
+    if (!Array.isArray(arr) && typeof arr !== "string") {
+        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
         process.exit(1)     
     }
     return arr.length;  
+}
+
+function newArr(arr, size, fillValue = null){
+    if (!Array.isArray(arr)) {
+        console.error('Input must be an array');
+        process.exit(1)
+    }
+    return Array.from({ length: size }, (_, i) => arr[i] || fillValue);
+}
+function includes(arr, value) {
+    if (!Array.isArray(arr) && typeof arr !== "string") {
+        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
+        process.exit(1)
+    }
+    return arr.includes(value);
 }

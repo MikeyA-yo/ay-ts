@@ -118,6 +118,7 @@ while (counter < 10) {
 }
 
 l numbers = [1, 2, 3, 4, 5]
+
 print(numbers, len(numbers))
 
 /*l promise = httpGet("https://restcountries.com/v3.1/all?fields=name,flags");
@@ -135,3 +136,8 @@ print(complexCalc)
 
 l mathResult = add(factorial(3), fibonacci(5))
 print(mathResult)
+
+l asks = input("WHat you gonna type ei? ")
+print(asks, len(asks))
+l numberP = numbers[randInt(0,3)]
+print(numberP)

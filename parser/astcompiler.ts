@@ -52,6 +52,13 @@ export default function compileAST(ast:ASTNode[]) {
         if (node.elements) {
           return `[${node.elements.map(compileNode).join(", ")}]`;
         }
+        if (node.identifier && node.index) {
+          if (Array.isArray(node.index)) {
+            return `${node.identifier}[${node.index.map(compileNode).join("][")}]`;
+          } else {
+            return `${node.identifier}[${compileNode(node.index)}]`;
+          }
+        }
         if (typeof node === "string") {
           return node;
         }

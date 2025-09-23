@@ -148,26 +148,71 @@ This is a multi-line comment.
 The AY language includes a comprehensive standard library with the following functions:
 
 #### Core Functions
-- `print(value)`: Prints a value to the console
-- `rand()`: Returns a random number between 0 and 1
-- `round(value)`: Rounds a number to the nearest integer
+- `print(...values)`: Prints values to the console
+- `input(prompt?)`: Gets user input from terminal (synchronous, blocks execution)
+- `coolPrint(msg)`: Prints message with "[COOL PRINT]" prefix
+- `fancyLog(msg)`: Prints message with "✨ FANCY LOG:" prefix
+- `stylishWarn(msg)`: Prints warning with "⚠️ STYLISH WARNING:" prefix
+- `errorPop(msg)`: Prints error with "❌ ERROR POP:" prefix
+- `errorlog(...msg)`: Prints error messages to console
+- `rand(min?, max?)`: Returns random number (0-1 if no params, or between min-max)
+- `randInt(min?, max?)`: Returns random integer between min and max
+- `round(num, precision?)`: Rounds number to specified decimal places (default 0)
 
 #### Math Functions
+**Basic Math:**
 - `abs(x)`: Returns absolute value
-- `max(a, b)`: Returns the larger of two numbers
-- `min(a, b)`: Returns the smaller of two numbers
+- `max(...numbers)`: Returns the largest of given numbers
+- `min(...numbers)`: Returns the smallest of given numbers
 - `pow(base, exponent)`: Returns base raised to exponent
 - `sqrt(x)`: Returns square root
 - `floor(x)`: Rounds down to nearest integer
 - `ceil(x)`: Rounds up to nearest integer
+- `exp(x)`: Returns e raised to the power of x
+- `log(x)`: Returns natural logarithm
+- `log10(x)`: Returns base-10 logarithm
+- `log2(x)`: Returns base-2 logarithm
+
+**Trigonometric Functions:**
+- `sin(x)`: Returns sine (radians)
+- `cos(x)`: Returns cosine (radians)
+- `tan(x)`: Returns tangent (radians)
+- `asin(x)`: Returns arcsine
+- `acos(x)`: Returns arccosine
+- `atan(x)`: Returns arctangent
+- `atan2(y, x)`: Returns arctangent of y/x
+
+**Trigonometric Identities:**
+- `sec(x)`: Returns secant (1/cos(x))
+- `csc(x)`: Returns cosecant (1/sin(x))
+- `cot(x)`: Returns cotangent (1/tan(x))
+
+**Degree-based Trigonometry:**
+- `sind(degrees)`: Returns sine of degrees
+- `cosd(degrees)`: Returns cosine of degrees
+- `tand(degrees)`: Returns tangent of degrees
+- `toRadians(degrees)`: Converts degrees to radians
+- `toDegrees(radians)`: Converts radians to degrees
+
+**Hyperbolic Functions:**
+- `sinh(x)`: Returns hyperbolic sine
+- `cosh(x)`: Returns hyperbolic cosine
+- `tanh(x)`: Returns hyperbolic tangent
+- `asinh(x)`: Returns inverse hyperbolic sine
+- `acosh(x)`: Returns inverse hyperbolic cosine
+- `atanh(x)`: Returns inverse hyperbolic tangent
+
+**Mathematical Constants:**
+- `pi()`: Returns π (3.14159...)
+- `e()`: Returns Euler's number (2.71828...)
 
 #### String Functions
-- `len(str)`: Returns length of string
+- `len(str)`: Returns length of string (also works with arrays)
 - `upper(str)`: Converts to uppercase
 - `lower(str)`: Converts to lowercase
-- `substr(str, start, length)`: Returns substring
-- `replace(str, search, replace)`: Replaces text in string
 - `split(str, delimiter)`: Splits string into array
+- `reverse(str)`: Reverses a string
+- `join(arr, delimiter)`: Joins array elements into a string
 
 #### Array Functions
 - `push(arr, ...items)`: Adds items to array and returns modified array
@@ -178,22 +223,79 @@ The AY language includes a comprehensive standard library with the following fun
 - `map(arr, callback)`: Returns new mapped array
 - `slice(arr, start, end)`: Returns new sliced array
 - `splice(arr, start, deleteCount, ...items)`: Modifies array and returns it
-- `len(arr)`: Returns array length
+- `len(arr)`: Returns array length (also works with strings)
+- `includes(arr, value)`: Checks if array contains value (also works with strings)
+- `newArr(arr, size, fillValue?)`: Creates new array from existing with specified size and fill value
 
 #### File System Functions
-- `readFile(path)`: Reads file content
-- `writeFile(path, content)`: Writes content to file
-- `exists(path)`: Checks if file exists
+- `read(path, options?)`: Reads file content (default encoding: utf-8)
+- `write(file, data)`: Writes content to file
 
 #### HTTP Functions
-- `httpGet(url)`: Makes HTTP GET request
-- `httpPost(url, data)`: Makes HTTP POST request
+**Basic HTTP Requests:**
+- `httpGet(url, parseType?)`: Makes HTTP GET request (parseType: json, text, blob, arrayBuffer, formData)
+- `httpPost(url, data)`: Makes HTTP POST request with JSON data
+- `httpPut(url, data)`: Makes HTTP PUT request with JSON data
+- `httpDelete(url)`: Makes HTTP DELETE request
+
+**HTTP Server Functions:**
+- `createHttpServer(port)`: Creates HTTP server on specified port
+- `startHttpServer(port)`: Starts HTTP server on specified port
+- `stopHttpServer(server)`: Stops the given HTTP server
+
+**Response Helpers:**
+- `createJsonResponse(data, status?)`: Creates JSON response object
+- `createErrorResponse(message, status?)`: Creates error response object
+- `createSuccessResponse(data, message?)`: Creates success response object
+
+**URL and Query Utilities:**
+- `buildHttpUrl(base, path)`: Builds URL from base and path
+- `buildQueryString(params)`: Builds query string from object
+- `parseJson(jsonString)`: Parses JSON string safely
+- `stringifyJson(obj)`: Converts object to JSON string safely
+- `getHttpStatusMessage(status)`: Gets status message for HTTP code
+
+**Logging Functions:**
+- `logHttpRequest(method, url, data?)`: Logs HTTP request details
+- `logHttpResponse(response)`: Logs HTTP response details
+
+**Promise Handling:**
 - `awaitPromise(promise, onSuccess, onError)`: Handles async operations
+- `awaitPromiseWithTimeout(promise, onSuccess, onError, timeout?)`: Handles promises with timeout
+- `awaitAll(promises, onSuccess, onError)`: Handles multiple promises
+- `logPromise(promise, label?, varName?)`: Logs promise execution
 
 #### Date/Time Functions
-- `now()`: Returns current timestamp
-- `formatDate(date, format)`: Formats date string
-- `parseDate(dateString)`: Parses date from string
+**Current Date/Time:**
+- `now()`: Returns current Date object
+- `timestamp()`: Returns current timestamp in milliseconds
+
+**Date Formatting:**
+- `dateToISO(date)`: Converts date to ISO string
+- `dateToLocal(date)`: Converts date to local string
+- `dateToShort(date)`: Converts date to MM/DD/YYYY format
+- `dateToLong(date)`: Converts date to long readable format
+
+**Date Calculations:**
+- `dateDiffInDays(date1, date2)`: Returns difference in days
+- `dateDiffInHours(date1, date2)`: Returns difference in hours
+- `dateDiffInMinutes(date1, date2)`: Returns difference in minutes
+- `dateDiffInSeconds(date1, date2)`: Returns difference in seconds
+
+**Date Manipulation:**
+- `dateAdd(date, value, unit)`: Adds time to date (units: years, months, days, hours, minutes, seconds)
+- `dateSubtract(date, value, unit)`: Subtracts time from date
+- `dateStartOf(date, unit)`: Gets start of time period (units: year, month, day, hour)
+- `dateEndOf(date, unit)`: Gets end of time period
+
+**Date Validation:**
+- `isValidDateFormat(date)`: Checks if date is valid
+
+#### Timer Functions
+- `Timeout(fn, delay)`: Sets a timeout to execute function after delay (milliseconds)
+- `Interval(fn, interval)`: Sets an interval to execute function repeatedly
+- `stopTimeout(timeoutId)`: Clears a timeout
+- `stopInterval(intervalId)`: Clears an interval
 
 ### Example Using Built-in Functions
 ```ay
@@ -208,17 +310,68 @@ l upperText = upper(text)        // "HELLO WORLD"
 l textLength = len(text)         // 11
 l words = split(text, " ")       // ["Hello", "World"]
 
+// User input (synchronous)
+l userName = inputSync("Enter your name: ")
+print("Hello, " + userName + "!")
+
+l age = inputSync("Enter your age: ")
+l ageNum = parseInt(age)
+if (ageNum >= 18) {
+    print("You are an adult!")
+} else {
+    print("You are a minor!")
+}
+
+### Example Using Built-in Functions
+```ay
+// Math operations
+l numbers = [5, 2, 8, 1, 9]
+l maxNum = max(5, 10)  // 10
+l rounded = round(3.7, 1) // 3.7 (rounded to 1 decimal place)
+
+// String operations
+l text = "Hello World"
+l upperText = upper(text)        // "HELLO WORLD"
+l textLength = len(text)         // 11
+l words = split(text, " ")       // ["Hello", "World"]
+l reversedText = reverse(text)   // "dlroW olleH"
+
+// User input (synchronous)
+l userName = input("Enter your name: ")
+print("Hello, " + userName + "!")
+
+l age = input("Enter your age: ")
+l ageNum = parseInt(age)
+if (ageNum >= 18) {
+    print("You are an adult!")
+} else {
+    print("You are a minor!")
+}
+
 // Array operations
 l fruits = ["apple", "banana"]
 l moreFruits = push(fruits, "orange", "grape")  // ["apple", "banana", "orange", "grape"]
 l sortedFruits = sort(moreFruits)               // ["apple", "banana", "grape", "orange"]
 l firstTwo = slice(sortedFruits, 0, 2)          // ["apple", "banana"]
+l hasApple = includes(sortedFruits, "apple")    // true
 
 // Using def with built-ins
 def log -> print
 def length -> len
+def ask -> input
 
 log("Array length: " + length(sortedFruits))
+l hobby = ask("What's your hobby? ")
+log("Cool! You enjoy " + hobby)
+
+// Math with new functions
+l angle = 45
+l radians = toRadians(angle)
+l sineValue = sin(radians)
+l randomBetween = randInt(1, 100)  // Random integer between 1-100
+log("sin(45°) = " + sineValue)
+log("Random number: " + randomBetween)
+```
 ```
 
 ### Example Program
