@@ -1,57 +1,77 @@
 # AY Language Compiler
 
 ## Introduction
+
 AY is a simple, custom programming language designed for experimentation and learning. This compiler translates AY programs into JavaScript, allowing you to run your AY code in any JavaScript environment.
 
 ## Installation
 
 ### Option 1: Install from npm (Recommended)
+
 Install the AY compiler globally using npm:
+
 ```bash
 npm install -g ayscript
 ```
 
 ### Option 2: Install from source
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/MikeyA-yo/ay-ts.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd ay-ts
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Build the project:
-   ```bash
-   npx tsc
-   ```
+
+Clone the repository:
+
+```bash
+git clone https://github.com/MikeyA-yo/ay-ts.git
+```
+
+Navigate to the project directory:
+
+```bash
+  cd ay-ts
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build the project:
+
+```bash
+npx tsc
+```
 
 ## Usage
+
 To compile and run an AY program:
 
-### Using the global installation:
+### Using the global installation
+
 1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 2. Compile the program:
+
    ```bash
    ayc myprogram.ay
    ```
+
 3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
 4. Run the generated JavaScript file using Node.js:
+
    ```bash
    node myprogram.js
    ```
 
-### Using the source installation:
+### Using the source installation
+
 1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 2. Compile the program:
+
    ```bash
    node dist/index.js myprogram.ay
    ```
+
 3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
 4. Run the generated JavaScript file using Node.js:
+
    ```bash
    node myprogram.js
    ```
@@ -59,14 +79,18 @@ To compile and run an AY program:
 ## Language Features
 
 ### Variable Declaration
+
 Variables are declared using the `l` keyword and are block-scoped:
+
 ```ay
 l a = "hello";
 l b = 42;
 ```
 
 ### Functions
+
 Functions are declared using the `f` keyword:
+
 ```ay
 f add(a, b) {
     l c = a + b;
@@ -75,7 +99,9 @@ f add(a, b) {
 ```
 
 ### Aliases with `def` Keyword
+
 The `def` keyword allows you to create aliases for language constructs, making your code more readable:
+
 ```ay
 // Create aliases for common keywords
 def var -> l
@@ -103,7 +129,9 @@ while (counter < 10) {
 ```
 
 ### Control Flow
+
 #### If-Else
+
 ```ay
 if (a == b) {
     return true;
@@ -115,7 +143,9 @@ if (a == b) {
 ```
 
 #### Loops
+
 **While Loop**:
+
 ```ay
 l i = 0;
 while (i < 5) {
@@ -125,6 +155,7 @@ while (i < 5) {
 ```
 
 **For Loop**:
+
 ```ay
 for (l i = 0; i < 8; i++) {
     print(i);
@@ -132,12 +163,15 @@ for (l i = 0; i < 8; i++) {
 ```
 
 ### Comments
+
 Single-line comments:
+
 ```ay
 // This is a single-line comment
 ```
 
 Multi-line comments:
+
 ```ay
 /*
 This is a multi-line comment.
@@ -145,14 +179,17 @@ This is a multi-line comment.
 ```
 
 ### Standard Library
+
 The AY language includes a comprehensive standard library with the following functions:
 
 #### Core Functions
+
 - `print(value)`: Prints a value to the console
 - `rand()`: Returns a random number between 0 and 1
 - `round(value)`: Rounds a number to the nearest integer
 
 #### Math Functions
+
 - `abs(x)`: Returns absolute value
 - `max(a, b)`: Returns the larger of two numbers
 - `min(a, b)`: Returns the smaller of two numbers
@@ -162,6 +199,7 @@ The AY language includes a comprehensive standard library with the following fun
 - `ceil(x)`: Rounds up to nearest integer
 
 #### String Functions
+
 - `len(str)`: Returns length of string
 - `upper(str)`: Converts to uppercase
 - `lower(str)`: Converts to lowercase
@@ -170,6 +208,7 @@ The AY language includes a comprehensive standard library with the following fun
 - `split(str, delimiter)`: Splits string into array
 
 #### Array Functions
+
 - `push(arr, ...items)`: Adds items to array and returns modified array
 - `pop(arr)`: Removes last item and returns modified array
 - `sort(arr, compareFn?)`: Sorts array and returns it
@@ -181,21 +220,25 @@ The AY language includes a comprehensive standard library with the following fun
 - `len(arr)`: Returns array length
 
 #### File System Functions
+
 - `readFile(path)`: Reads file content
 - `writeFile(path, content)`: Writes content to file
 - `exists(path)`: Checks if file exists
 
 #### HTTP Functions
+
 - `httpGet(url)`: Makes HTTP GET request
 - `httpPost(url, data)`: Makes HTTP POST request
 - `awaitPromise(promise, onSuccess, onError)`: Handles async operations
 
 #### Date/Time Functions
+
 - `now()`: Returns current timestamp
 - `formatDate(date, format)`: Formats date string
 - `parseDate(dateString)`: Parses date from string
 
 ### Example Using Built-in Functions
+
 ```ay
 // Math operations
 l numbers = [5, 2, 8, 1, 9]
@@ -222,6 +265,7 @@ log("Array length: " + length(sortedFruits))
 ```
 
 ### Example Program
+
 ```ay
 // Define custom aliases for better readability
 def var -> l
@@ -277,10 +321,13 @@ awaitPromise(promise, fn(data) {
 ```
 
 ## Extending the Language
+
 To add new features to the AY language:
+
 1. Modify the parser in `parser/` to recognize new syntax.
 2. Update the AST compiler in `parser/astcompiler.ts` to handle new AST nodes.
 3. (Optional) Add new functions to the standard library in `functions/`.
 
 ## License
+
 This project is licensed under the MIT License.
