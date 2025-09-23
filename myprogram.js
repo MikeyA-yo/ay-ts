@@ -544,8 +544,12 @@ let mathResult = add(factorial(3), fibonacci(5));
 print(mathResult)
 let asks = input("WHat you gonna type ei? ");
 print(asks, len(asks))
-let numberP = numbers[3];
+let numberP = numbers[randInt(0, 3)];
 print(numberP)
+while (true) {
+print(0)
+break;
+}
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 

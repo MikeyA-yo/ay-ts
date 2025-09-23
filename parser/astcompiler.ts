@@ -82,11 +82,15 @@ export default function compileAST(ast:ASTNode[]) {
   }
 
   function compileTest(test) {
-    if (test.paren) {
+    if (test.paren && test.paren.left && test.paren.operator && test.paren.right) {
       return `(${compileNode(test.paren.left)} ${test.paren.operator} ${compileNode(test.paren.right)})`;
     }
     if (test.operator && test.left !== undefined && test.right !== undefined) {
       return `(${compileNode(test.left)} ${test.operator} ${compileNode(test.right)})`;
+    }
+    // Bool usually comes like { paren: "true" } or { paren: "false" }
+    if (typeof test.paren === "string") {
+      return`(${test.paren})`;
     }
     return compileNode(test);
   }
