@@ -40,7 +40,12 @@ export default function compileAST(ast:ASTNode[]) {
         if (node.operator && node.left !== undefined && node.right !== undefined) {
           // Handle string concatenation and other binary operations
           const left = compileNode(node.left);
-          const right = compileNode(node.right);
+          let right;
+          if (node.right && node.right.paren) {
+            right = compileTest(node.right);
+          } else {
+            right = compileNode(node.right);
+          }
           return `${left} ${node.operator} ${right}`;
         }
         if (node.postop && node.identifier) {

@@ -149,3 +149,4 @@ while(true){
 writestdout("\n")
 writestdout("Hey ")
 writestdout("World\n")
+l addComp = 8 + 9 - (7/6*8)

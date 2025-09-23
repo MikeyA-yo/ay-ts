@@ -555,6 +555,7 @@ break;
 writestdout("\n")
 writestdout("Hey ")
 writestdout("World\n")
+let addComp = 8 + 9 - (7 / 6 * 8);
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 
