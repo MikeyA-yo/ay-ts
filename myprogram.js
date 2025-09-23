@@ -48,7 +48,8 @@ function splice(arr, start, deleteCount, ...items) {
         console.error('Input must be an array');
         process.exit(1)
     }
-    return arr.splice(start, deleteCount,...items);
+    arr.splice(start, deleteCount,...items);
+    return arr;
 }
 
 function push(arr,...items) {
@@ -56,7 +57,8 @@ function push(arr,...items) {
         console.error('Input must be an array');
         process.exit(1)
     }
-    return arr.push(...items);
+    arr.push(...items);
+    return arr;
 }
 
 function pop(arr) {
@@ -64,15 +66,31 @@ function pop(arr) {
         console.error('Input must be an array but got,', typeof arr, 'instead for this function');
         process.exit(1)     
     }
-    return arr.pop();
+    arr.pop();
+    return arr;
 }
 
 function len(arr) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array but got,', typeof arr, 'instead for this function');
+    if (!Array.isArray(arr) && typeof arr !== "string") {
+        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
         process.exit(1)     
     }
     return arr.length;  
+}
+
+function newArr(arr, size, fillValue = null){
+    if (!Array.isArray(arr)) {
+        console.error('Input must be an array');
+        process.exit(1)
+    }
+    return Array.from({ length: size }, (_, i) => arr[i] || fillValue);
+}
+function includes(arr, value) {
+    if (!Array.isArray(arr) && typeof arr !== "string") {
+        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
+        process.exit(1)
+    }
+    return arr.includes(value);
 }
 function rand(min = 0, max = 0) {
   return Math.random() * (max - min + 1) + min
@@ -85,24 +103,169 @@ function randInt(min = 0, max = 0) {
 function round(num, precision = 0) {
   return Math.round(num * Math.pow(10, precision)) / Math.pow(10, precision);
 }
+
+// Basic trigonometric functions
+function sin(x) {
+  return Math.sin(x);
+}
+
+function cos(x) {
+  return Math.cos(x);
+}
+
+function tan(x) {
+  return Math.tan(x);
+}
+
+// Inverse trigonometric functions
+function asin(x) {
+  return Math.asin(x);
+}
+
+function acos(x) {
+  return Math.acos(x);
+}
+
+function atan(x) {
+  return Math.atan(x);
+}
+
+function atan2(y, x) {
+  return Math.atan2(y, x);
+}
+
+// Hyperbolic functions
+function sinh(x) {
+  return Math.sinh(x);
+}
+
+function cosh(x) {
+  return Math.cosh(x);
+}
+
+function tanh(x) {
+  return Math.tanh(x);
+}
+
+// Inverse hyperbolic functions
+function asinh(x) {
+  return Math.asinh(x);
+}
+
+function acosh(x) {
+  return Math.acosh(x);
+}
+
+function atanh(x) {
+  return Math.atanh(x);
+}
+
+// Trigonometric identities and utility functions
+function sec(x) {
+  return 1 / Math.cos(x);
+}
+
+function csc(x) {
+  return 1 / Math.sin(x);
+}
+
+function cot(x) {
+  return 1 / Math.tan(x);
+}
+
+// Convert between degrees and radians
+function toRadians(degrees) {
+  return degrees * (Math.PI / 180);
+}
+
+function toDegrees(radians) {
+  return radians * (180 / Math.PI);
+}
+
+// Degree-based trigonometric functions
+function sind(degrees) {
+  return Math.sin(toRadians(degrees));
+}
+
+function cosd(degrees) {
+  return Math.cos(toRadians(degrees));
+}
+
+function tand(degrees) {
+  return Math.tan(toRadians(degrees));
+}
+
+// Additional math constants and functions
+function pi() {
+  return Math.PI;
+}
+
+function e() {
+  return Math.E;
+}
+
+function abs(x) {
+  return Math.abs(x);
+}
+
+function sqrt(x) {
+  return Math.sqrt(x);
+}
+
+function pow(base, exponent) {
+  return Math.pow(base, exponent);
+}
+
+function exp(x) {
+  return Math.exp(x);
+}
+
+function log(x) {
+  return Math.log(x);
+}
+
+function log10(x) {
+  return Math.log10(x);
+}
+
+function log2(x) {
+  return Math.log2(x);
+}
+
+function floor(x) {
+  return Math.floor(x);
+}
+
+function ceil(x) {
+  return Math.ceil(x);
+}
+
+function max(...numbers) {
+  return Math.max(...numbers);
+}
+
+function min(...numbers) {
+  return Math.min(...numbers);
+}
+
 // String utility functions for AY language
-function Split(str, delimiter) {
+function split(str, delimiter) {
   return str.split(delimiter);
 }
 
-function Reverse(str) {
+function reverse(str) {
   return str.split("").reverse().join("");
 }
 
-function stylishJoin(arr, delimiter) {
+function join(arr, delimiter) {
   return arr.join(delimiter);
 }
 
-function shoutyCaps(str) {
+function upper(str) {
   return str.toUpperCase();
 }
 
-function whisperyCaps(str) {
+function lower(str) {
   return str.toLowerCase();
 }
 // Print utility functions for AY language
@@ -129,6 +292,40 @@ function print(...msg) {
 function errorlog(...msg) {
   console.error(...msg);
 }
+
+
+// Synchronous input function using process.stdin (blocks execution)
+function input(prompt = "") {
+  const fs = require('fs');
+  
+  // Display the prompt
+  if (prompt) {
+    process.stdout.write(prompt);
+  }
+  
+  // Read from stdin synchronously
+  let input = '';
+  const fd = process.stdin.fd;
+  const buffer = Buffer.alloc(1);
+  
+  while (true) {
+    const bytesRead = fs.readSync(fd, buffer, 0, 1, null);
+    if (bytesRead === 0) break;
+    
+    const char = buffer.toString();
+    
+    // Check for Enter key (newline)
+    if (char === '\n' || char === '\r') {
+      break;
+    }
+    
+    // Add character to input
+    input += char;
+  }
+  return input.trim();
+}
+
+
 const { readFileSync, writeFileSync } = require("node:fs");
 
 function read(path, options = "utf-8"){
@@ -238,6 +435,12 @@ const isValidDateFormat = (date) => {
   return d instanceof Date && !isNaN(d);
 };
 
+function now(){
+  return new Date();
+}
+function timestamp(){
+  return Date.now();
+}
 // Timer utility functions for AY language
 function Timeout(fn, delay) {
   return setTimeout(fn, delay);
@@ -339,6 +542,10 @@ let complexCalc = factorial(4) + fibonacci(6);
 print(complexCalc)
 let mathResult = add(factorial(3), fibonacci(5));
 print(mathResult)
+let asks = input("WHat you gonna type ei? ");
+print(asks, len(asks))
+let numberP = numbers[3];
+print(numberP)
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 

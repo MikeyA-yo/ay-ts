@@ -191,21 +191,63 @@ The AY language includes a comprehensive standard library with the following fun
 #### Math Functions
 
 - `abs(x)`: Returns absolute value
-- `max(a, b)`: Returns the larger of two numbers
-- `min(a, b)`: Returns the smaller of two numbers
+- `max(...numbers)`: Returns the largest of given numbers
+- `min(...numbers)`: Returns the smallest of given numbers
 - `pow(base, exponent)`: Returns base raised to exponent
 - `sqrt(x)`: Returns square root
 - `floor(x)`: Rounds down to nearest integer
 - `ceil(x)`: Rounds up to nearest integer
+- `exp(x)`: Returns e raised to the power of x
+- `log(x)`: Returns natural logarithm
+- `log10(x)`: Returns base-10 logarithm
+- `log2(x)`: Returns base-2 logarithm
+
+**Trigonometric Functions:**
+
+- `sin(x)`: Returns sine (radians)
+- `cos(x)`: Returns cosine (radians)
+- `tan(x)`: Returns tangent (radians)
+- `asin(x)`: Returns arcsine
+- `acos(x)`: Returns arccosine
+- `atan(x)`: Returns arctangent
+- `atan2(y, x)`: Returns arctangent of y/x
+
+**Trigonometric Identities:**
+
+- `sec(x)`: Returns secant (1/cos(x))
+- `csc(x)`: Returns cosecant (1/sin(x))
+- `cot(x)`: Returns cotangent (1/tan(x))
+
+**Degree-based Trigonometry:**
+
+- `sind(degrees)`: Returns sine of degrees
+- `cosd(degrees)`: Returns cosine of degrees
+- `tand(degrees)`: Returns tangent of degrees
+- `toRadians(degrees)`: Converts degrees to radians
+- `toDegrees(radians)`: Converts radians to degrees
+
+**Hyperbolic Functions:**
+
+- `sinh(x)`: Returns hyperbolic sine
+- `cosh(x)`: Returns hyperbolic cosine
+- `tanh(x)`: Returns hyperbolic tangent
+- `asinh(x)`: Returns inverse hyperbolic sine
+- `acosh(x)`: Returns inverse hyperbolic cosine
+- `atanh(x)`: Returns inverse hyperbolic tangent
+
+**Mathematical Constants:**
+
+- `pi()`: Returns π (3.14159...)
+- `e()`: Returns Euler's number (2.71828...)
 
 #### String Functions
 
 - `len(str)`: Returns length of string
 - `upper(str)`: Converts to uppercase
 - `lower(str)`: Converts to lowercase
-- `substr(str, start, length)`: Returns substring
-- `replace(str, search, replace)`: Replaces text in string
 - `split(str, delimiter)`: Splits string into array
+- `reverse(str)`: Reverses a string
+- `join(arr, delimiter)`: Joins array elements into a string
 
 #### Array Functions
 
@@ -217,7 +259,9 @@ The AY language includes a comprehensive standard library with the following fun
 - `map(arr, callback)`: Returns new mapped array
 - `slice(arr, start, end)`: Returns new sliced array
 - `splice(arr, start, deleteCount, ...items)`: Modifies array and returns it
-- `len(arr)`: Returns array length
+- `len(arr)`: Returns array length (also works with strings)
+- `includes(arr, value)`: Checks if array contains value (also works with strings)
+- `newArr(arr, size, fillValue?)`: Creates new array from existing with specified size and fill value
 
 #### File System Functions
 
@@ -230,6 +274,9 @@ The AY language includes a comprehensive standard library with the following fun
 - `httpGet(url)`: Makes HTTP GET request
 - `httpPost(url, data)`: Makes HTTP POST request
 - `awaitPromise(promise, onSuccess, onError)`: Handles async operations
+- `awaitPromiseWithTimeout(promise, onSuccess, onError, timeout?)`: Handles promises with timeout
+- `awaitAll(promises, onSuccess, onError)`: Handles multiple promises
+- `logPromise(promise, label?, varName?)`: Logs promise execution
 
 #### Date/Time Functions
 
@@ -239,7 +286,7 @@ The AY language includes a comprehensive standard library with the following fun
 
 ### Example Using Built-in Functions
 
-```ay
+````ay
 // Math operations
 l numbers = [5, 2, 8, 1, 9]
 l maxNum = max(5, 10)  // 10
@@ -251,18 +298,70 @@ l upperText = upper(text)        // "HELLO WORLD"
 l textLength = len(text)         // 11
 l words = split(text, " ")       // ["Hello", "World"]
 
+// User input (synchronous)
+l userName = inputSync("Enter your name: ")
+print("Hello, " + userName + "!")
+
+l age = inputSync("Enter your age: ")
+l ageNum = parseInt(age)
+if (ageNum >= 18) {
+    print("You are an adult!")
+} else {
+    print("You are a minor!")
+}
+
+### Example Using Built-in Functions
+```ay
+// Math operations
+l numbers = [5, 2, 8, 1, 9]
+l maxNum = max(5, 10)  // 10
+l rounded = round(3.7, 1) // 3.7 (rounded to 1 decimal place)
+
+// String operations
+l text = "Hello World"
+l upperText = upper(text)        // "HELLO WORLD"
+l textLength = len(text)         // 11
+l words = split(text, " ")       // ["Hello", "World"]
+l reversedText = reverse(text)   // "dlroW olleH"
+
+// User input (synchronous)
+l userName = input("Enter your name: ")
+print("Hello, " + userName + "!")
+
+l age = input("Enter your age: ")
+l ageNum = parseInt(age)
+if (ageNum >= 18) {
+    print("You are an adult!")
+} else {
+    print("You are a minor!")
+}
+
 // Array operations
 l fruits = ["apple", "banana"]
 l moreFruits = push(fruits, "orange", "grape")  // ["apple", "banana", "orange", "grape"]
 l sortedFruits = sort(moreFruits)               // ["apple", "banana", "grape", "orange"]
 l firstTwo = slice(sortedFruits, 0, 2)          // ["apple", "banana"]
+l hasApple = includes(sortedFruits, "apple")    // true
 
 // Using def with built-ins
 def log -> print
 def length -> len
+def ask -> input
 
 log("Array length: " + length(sortedFruits))
-```
+l hobby = ask("What's your hobby? ")
+log("Cool! You enjoy " + hobby)
+
+// Math with new functions
+l angle = 45
+l radians = toRadians(angle)
+l sineValue = sin(radians)
+l randomBetween = randInt(1, 100)  // Random integer between 1-100
+log("sin(45°) = " + sineValue)
+log("Random number: " + randomBetween)
+````
+
+````
 
 ### Example Program
 
@@ -318,7 +417,7 @@ awaitPromise(promise, fn(data) {
 }, fn(error) {
     print("Error: " + error)
 })
-```
+````
 
 ## Extending the Language
 

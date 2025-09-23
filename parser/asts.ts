@@ -87,6 +87,7 @@ export interface ASTNode {
   test?:ASTNode;
   consequent?:ASTNode;
   alternate?:ASTNode
+  index?:ASTNode | ASTNode[];
 }
 export interface Variable{
   dataType: string,

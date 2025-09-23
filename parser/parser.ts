@@ -228,6 +228,41 @@ export class Parser {
       };
     }
   }
+  parseArrIndex(){
+    let identifier = this.consume().value; // Consume the array identifier
+    if (!this.expectTokenVal("[")) {
+      this.addError(`SyntaxError: Expected '[' after array identifier '${identifier}'`);
+      return null;
+    }
+
+    let indexNodes: ASTNode[] = [];
+
+    // Handle multiple nested indices like ident[0][1][2]
+    while (this.expectTokenVal("[")) {
+      this.consume(); // Consume the opening '['
+
+      const index = this.parseExpression();
+      if (!index) {
+      this.addError(`SyntaxError: Invalid array index for '${identifier}'`);
+      return null;
+      }
+      indexNodes.push(index);
+
+      if (!this.expectTokenVal("]")) {
+      this.addError(`SyntaxError: Expected ']' after array index for '${identifier}'`);
+      return null;
+      }
+      this.consume(); // Consume the closing ']'
+    }
+
+    // If only one index, return as single node, else as array
+    const index = indexNodes.length === 1 ? indexNodes[0] : indexNodes;
+
+    return <ASTNode><unknown>{
+      identifier,
+      index,
+    };
+  }
   parseExpression() {
     let left;
 
@@ -243,6 +278,8 @@ export class Parser {
       left = this.parseCallExpr();
     } else if (this.expectTokenVal("[")) {
       left = this.parseArray();
+    } else if (this.expectToken(TokenType.Identifier) && this.expectPeekVal("[")) {
+      left = this.parseArrIndex();
     } else if (this.expectTokenVal("f")) {
       left = this.parseFunc();
     } else if (
