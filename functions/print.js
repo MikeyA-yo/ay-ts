@@ -55,3 +55,6 @@ function input(prompt = "") {
   return input.trim();
 }
 
+function writestdout(...args){
+  process.stdout.write(args.join(' '));
+}

@@ -149,6 +149,7 @@ The AY language includes a comprehensive standard library with the following fun
 
 #### Core Functions
 - `print(...values)`: Prints values to the console
+- `writestdout(...values)`: Prints to stdout without new line 
 - `input(prompt?)`: Gets user input from terminal (synchronous, blocks execution)
 - `coolPrint(msg)`: Prints message with "[COOL PRINT]" prefix
 - `fancyLog(msg)`: Prints message with "✨ FANCY LOG:" prefix

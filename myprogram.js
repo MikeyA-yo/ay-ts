@@ -325,7 +325,9 @@ function input(prompt = "") {
   return input.trim();
 }
 
-
+function writestdout(...args){
+  process.stdout.write(args.join(' '));
+}
 const { readFileSync, writeFileSync } = require("node:fs");
 
 function read(path, options = "utf-8"){
@@ -544,12 +546,15 @@ let mathResult = add(factorial(3), fibonacci(5));
 print(mathResult)
 let asks = input("WHat you gonna type ei? ");
 print(asks, len(asks))
-let numberP = numbers[randInt(0, 3)];
+let numberP = numbers[randInt(0, 4)];
 print(numberP)
 while (true) {
-print(0)
+writestdout(0)
 break;
 }
+writestdout("\n")
+writestdout("Hey ")
+writestdout("World\n")
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 
