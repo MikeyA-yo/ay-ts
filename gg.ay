@@ -1,0 +1,41 @@
+def fn -> f
+def log -> print
+
+log("Welcome to the AY Guessing Game!")
+
+var secret = randInt(1, 20)
+
+var player = input("Enter your name: ")
+fancyLog("Hello " + player + "! Let's play a game.")
+
+// Function to check guess
+fn checkGuess(guess, secret) {
+    if (guess == secret) {
+        return "Correct"
+    } else if (guess > secret) {
+        return "Too high"
+    } else {
+        return "Too low"
+    }
+}
+
+var attempts = 5
+while (attempts > 0) {
+    var guessStr = input("Guess a number between 1 and 20 (" + attempts + " tries left): ")
+    var guess = parseInt(guessStr)
+
+    var feedback = checkGuess(guess, secret)
+    stylishWarn(feedback)
+
+    if (guess == secret) {
+        coolPrint("You won, " + player + "!")
+        break
+    }
+
+    attempts--
+}
+
+
+if (attempts == 0) {
+    errorPop("Game over! The secret number was " + secret)
+}
