@@ -1,57 +1,77 @@
 # AY Language Compiler
 
 ## Introduction
+
 AY is a simple, custom programming language designed for experimentation and learning. This compiler translates AY programs into JavaScript, allowing you to run your AY code in any JavaScript environment.
 
 ## Installation
 
 ### Option 1: Install from npm (Recommended)
+
 Install the AY compiler globally using npm:
+
 ```bash
 npm install -g ayscript
 ```
 
 ### Option 2: Install from source
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/MikeyA-yo/ay-ts.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd ay-ts
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Build the project:
-   ```bash
-   npx tsc
-   ```
+
+Clone the repository:
+
+```bash
+git clone https://github.com/MikeyA-yo/ay-ts.git
+```
+
+Navigate to the project directory:
+
+```bash
+  cd ay-ts
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build the project:
+
+```bash
+npx tsc
+```
 
 ## Usage
+
 To compile and run an AY program:
 
-### Using the global installation:
+### Using the global installation
+
 1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 2. Compile the program:
+
    ```bash
    ayc myprogram.ay
    ```
+
 3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
 4. Run the generated JavaScript file using Node.js:
+
    ```bash
    node myprogram.js
    ```
 
-### Using the source installation:
+### Using the source installation
+
 1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 2. Compile the program:
+
    ```bash
    node dist/index.js myprogram.ay
    ```
+
 3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
 4. Run the generated JavaScript file using Node.js:
+
    ```bash
    node myprogram.js
    ```
@@ -59,14 +79,18 @@ To compile and run an AY program:
 ## Language Features
 
 ### Variable Declaration
+
 Variables are declared using the `l` keyword and are block-scoped:
+
 ```ay
 l a = "hello";
 l b = 42;
 ```
 
 ### Functions
+
 Functions are declared using the `f` keyword:
+
 ```ay
 f add(a, b) {
     l c = a + b;
@@ -75,7 +99,9 @@ f add(a, b) {
 ```
 
 ### Aliases with `def` Keyword
+
 The `def` keyword allows you to create aliases for language constructs, making your code more readable:
+
 ```ay
 // Create aliases for common keywords
 def var -> l
@@ -103,7 +129,9 @@ while (counter < 10) {
 ```
 
 ### Control Flow
+
 #### If-Else
+
 ```ay
 if (a == b) {
     return true;
@@ -115,7 +143,9 @@ if (a == b) {
 ```
 
 #### Loops
+
 **While Loop**:
+
 ```ay
 l i = 0;
 while (i < 5) {
@@ -125,6 +155,7 @@ while (i < 5) {
 ```
 
 **For Loop**:
+
 ```ay
 for (l i = 0; i < 8; i++) {
     print(i);
@@ -132,12 +163,15 @@ for (l i = 0; i < 8; i++) {
 ```
 
 ### Comments
+
 Single-line comments:
+
 ```ay
 // This is a single-line comment
 ```
 
 Multi-line comments:
+
 ```ay
 /*
 This is a multi-line comment.
@@ -145,22 +179,17 @@ This is a multi-line comment.
 ```
 
 ### Standard Library
+
 The AY language includes a comprehensive standard library with the following functions:
 
 #### Core Functions
-- `print(...values)`: Prints values to the console
-- `input(prompt?)`: Gets user input from terminal (synchronous, blocks execution)
-- `coolPrint(msg)`: Prints message with "[COOL PRINT]" prefix
-- `fancyLog(msg)`: Prints message with "✨ FANCY LOG:" prefix
-- `stylishWarn(msg)`: Prints warning with "⚠️ STYLISH WARNING:" prefix
-- `errorPop(msg)`: Prints error with "❌ ERROR POP:" prefix
-- `errorlog(...msg)`: Prints error messages to console
-- `rand(min?, max?)`: Returns random number (0-1 if no params, or between min-max)
-- `randInt(min?, max?)`: Returns random integer between min and max
-- `round(num, precision?)`: Rounds number to specified decimal places (default 0)
+
+- `print(value)`: Prints a value to the console
+- `rand()`: Returns a random number between 0 and 1
+- `round(value)`: Rounds a number to the nearest integer
 
 #### Math Functions
-**Basic Math:**
+
 - `abs(x)`: Returns absolute value
 - `max(...numbers)`: Returns the largest of given numbers
 - `min(...numbers)`: Returns the smallest of given numbers
@@ -174,6 +203,7 @@ The AY language includes a comprehensive standard library with the following fun
 - `log2(x)`: Returns base-2 logarithm
 
 **Trigonometric Functions:**
+
 - `sin(x)`: Returns sine (radians)
 - `cos(x)`: Returns cosine (radians)
 - `tan(x)`: Returns tangent (radians)
@@ -183,11 +213,13 @@ The AY language includes a comprehensive standard library with the following fun
 - `atan2(y, x)`: Returns arctangent of y/x
 
 **Trigonometric Identities:**
+
 - `sec(x)`: Returns secant (1/cos(x))
 - `csc(x)`: Returns cosecant (1/sin(x))
 - `cot(x)`: Returns cotangent (1/tan(x))
 
 **Degree-based Trigonometry:**
+
 - `sind(degrees)`: Returns sine of degrees
 - `cosd(degrees)`: Returns cosine of degrees
 - `tand(degrees)`: Returns tangent of degrees
@@ -195,6 +227,7 @@ The AY language includes a comprehensive standard library with the following fun
 - `toDegrees(radians)`: Converts radians to degrees
 
 **Hyperbolic Functions:**
+
 - `sinh(x)`: Returns hyperbolic sine
 - `cosh(x)`: Returns hyperbolic cosine
 - `tanh(x)`: Returns hyperbolic tangent
@@ -203,11 +236,13 @@ The AY language includes a comprehensive standard library with the following fun
 - `atanh(x)`: Returns inverse hyperbolic tangent
 
 **Mathematical Constants:**
+
 - `pi()`: Returns π (3.14159...)
 - `e()`: Returns Euler's number (2.71828...)
 
 #### String Functions
-- `len(str)`: Returns length of string (also works with arrays)
+
+- `len(str)`: Returns length of string
 - `upper(str)`: Converts to uppercase
 - `lower(str)`: Converts to lowercase
 - `split(str, delimiter)`: Splits string into array
@@ -215,6 +250,7 @@ The AY language includes a comprehensive standard library with the following fun
 - `join(arr, delimiter)`: Joins array elements into a string
 
 #### Array Functions
+
 - `push(arr, ...items)`: Adds items to array and returns modified array
 - `pop(arr)`: Removes last item and returns modified array
 - `sort(arr, compareFn?)`: Sorts array and returns it
@@ -228,77 +264,29 @@ The AY language includes a comprehensive standard library with the following fun
 - `newArr(arr, size, fillValue?)`: Creates new array from existing with specified size and fill value
 
 #### File System Functions
-- `read(path, options?)`: Reads file content (default encoding: utf-8)
-- `write(file, data)`: Writes content to file
+
+- `readFile(path)`: Reads file content
+- `writeFile(path, content)`: Writes content to file
+- `exists(path)`: Checks if file exists
 
 #### HTTP Functions
-**Basic HTTP Requests:**
-- `httpGet(url, parseType?)`: Makes HTTP GET request (parseType: json, text, blob, arrayBuffer, formData)
-- `httpPost(url, data)`: Makes HTTP POST request with JSON data
-- `httpPut(url, data)`: Makes HTTP PUT request with JSON data
-- `httpDelete(url)`: Makes HTTP DELETE request
 
-**HTTP Server Functions:**
-- `createHttpServer(port)`: Creates HTTP server on specified port
-- `startHttpServer(port)`: Starts HTTP server on specified port
-- `stopHttpServer(server)`: Stops the given HTTP server
-
-**Response Helpers:**
-- `createJsonResponse(data, status?)`: Creates JSON response object
-- `createErrorResponse(message, status?)`: Creates error response object
-- `createSuccessResponse(data, message?)`: Creates success response object
-
-**URL and Query Utilities:**
-- `buildHttpUrl(base, path)`: Builds URL from base and path
-- `buildQueryString(params)`: Builds query string from object
-- `parseJson(jsonString)`: Parses JSON string safely
-- `stringifyJson(obj)`: Converts object to JSON string safely
-- `getHttpStatusMessage(status)`: Gets status message for HTTP code
-
-**Logging Functions:**
-- `logHttpRequest(method, url, data?)`: Logs HTTP request details
-- `logHttpResponse(response)`: Logs HTTP response details
-
-**Promise Handling:**
+- `httpGet(url)`: Makes HTTP GET request
+- `httpPost(url, data)`: Makes HTTP POST request
 - `awaitPromise(promise, onSuccess, onError)`: Handles async operations
 - `awaitPromiseWithTimeout(promise, onSuccess, onError, timeout?)`: Handles promises with timeout
 - `awaitAll(promises, onSuccess, onError)`: Handles multiple promises
 - `logPromise(promise, label?, varName?)`: Logs promise execution
 
 #### Date/Time Functions
-**Current Date/Time:**
-- `now()`: Returns current Date object
-- `timestamp()`: Returns current timestamp in milliseconds
 
-**Date Formatting:**
-- `dateToISO(date)`: Converts date to ISO string
-- `dateToLocal(date)`: Converts date to local string
-- `dateToShort(date)`: Converts date to MM/DD/YYYY format
-- `dateToLong(date)`: Converts date to long readable format
-
-**Date Calculations:**
-- `dateDiffInDays(date1, date2)`: Returns difference in days
-- `dateDiffInHours(date1, date2)`: Returns difference in hours
-- `dateDiffInMinutes(date1, date2)`: Returns difference in minutes
-- `dateDiffInSeconds(date1, date2)`: Returns difference in seconds
-
-**Date Manipulation:**
-- `dateAdd(date, value, unit)`: Adds time to date (units: years, months, days, hours, minutes, seconds)
-- `dateSubtract(date, value, unit)`: Subtracts time from date
-- `dateStartOf(date, unit)`: Gets start of time period (units: year, month, day, hour)
-- `dateEndOf(date, unit)`: Gets end of time period
-
-**Date Validation:**
-- `isValidDateFormat(date)`: Checks if date is valid
-
-#### Timer Functions
-- `Timeout(fn, delay)`: Sets a timeout to execute function after delay (milliseconds)
-- `Interval(fn, interval)`: Sets an interval to execute function repeatedly
-- `stopTimeout(timeoutId)`: Clears a timeout
-- `stopInterval(intervalId)`: Clears an interval
+- `now()`: Returns current timestamp
+- `formatDate(date, format)`: Formats date string
+- `parseDate(dateString)`: Parses date from string
 
 ### Example Using Built-in Functions
-```ay
+
+````ay
 // Math operations
 l numbers = [5, 2, 8, 1, 9]
 l maxNum = max(5, 10)  // 10
@@ -371,10 +359,12 @@ l sineValue = sin(radians)
 l randomBetween = randInt(1, 100)  // Random integer between 1-100
 log("sin(45°) = " + sineValue)
 log("Random number: " + randomBetween)
-```
-```
+````
+
+````
 
 ### Example Program
+
 ```ay
 // Define custom aliases for better readability
 def var -> l
@@ -427,13 +417,16 @@ awaitPromise(promise, fn(data) {
 }, fn(error) {
     print("Error: " + error)
 })
-```
+````
 
 ## Extending the Language
+
 To add new features to the AY language:
+
 1. Modify the parser in `parser/` to recognize new syntax.
 2. Update the AST compiler in `parser/astcompiler.ts` to handle new AST nodes.
 3. (Optional) Add new functions to the standard library in `functions/`.
 
 ## License
+
 This project is licensed under the MIT License.
