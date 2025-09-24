@@ -3,13 +3,13 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Parser } from "./parser/parser";
 import compileAST from "./parser/astcompiler";
-
+import packageJson from "./package.json" 
 // Get the directory where this module is located
 // When compiled to CommonJS, __dirname will be available
 declare const __dirname: string;
 
 const fileName = process.argv[2];
-const VERSION = "1.0.2";
+const VERSION = packageJson.version;
 const AY_FancyName = `
    █████╗ ██╗   ██╗
   ██╔══██╗╚██╗ ██╔╝
