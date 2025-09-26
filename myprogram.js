@@ -295,34 +295,16 @@ function errorlog(...msg) {
 
 
 // Synchronous input function using process.stdin (blocks execution)
+const fs = require("fs");
+
 function input(prompt = "") {
-  const fs = require('fs');
-  
-  // Display the prompt
-  if (prompt) {
-    process.stdout.write(prompt);
-  }
-  
-  // Read from stdin synchronously
-  let input = '';
-  const fd = process.stdin.fd;
-  const buffer = Buffer.alloc(1);
-  
-  while (true) {
-    const bytesRead = fs.readSync(fd, buffer, 0, 1, null);
-    if (bytesRead === 0) break;
-    
-    const char = buffer.toString();
-    
-    // Check for Enter key (newline)
-    if (char === '\n' || char === '\r') {
-      break;
-    }
-    
-    // Add character to input
-    input += char;
-  }
-  return input.trim();
+  if (prompt) process.stdout.write(prompt);
+
+  // Read from stdin until newline
+  const buffer = Buffer.alloc(1024);
+  const bytesRead = fs.readSync(process.stdin.fd, buffer, 0, buffer.length, null);
+
+  return buffer.toString("utf8", 0, bytesRead).trim();
 }
 
 function writestdout(...args){

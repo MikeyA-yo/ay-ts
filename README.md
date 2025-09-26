@@ -1,7 +1,7 @@
 # AY Language Compiler
 
 ## Introduction
-AY is a simple, custom programming language designed for experimentation and learning. This compiler translates AY programs into JavaScript, allowing you to run your AY code in any JavaScript environment.
+AY is a simple, custom programming language designed for experimentation, simplicity, customization, quick scripting and learning. This compiler translates AY programs into JavaScript, allowing you to run your AY code in any JavaScript server side environment.
 
 ## Installation
 
