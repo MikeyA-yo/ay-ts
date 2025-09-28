@@ -459,11 +459,6 @@ export class TokenGen {
     if(steps && (steps + 1 + this.currentTokenNo) < this.tokens.length){
       let pkNo = steps + 1 + this.currentTokenNo
       if(this.tokens[pkNo]){
-        while (this.tokens[pkNo].type === TokenType.SingleLineComment ||this.tokens[pkNo].type === TokenType.MultiLineComment){
-          if (this.tokens[pkNo + 1]){
-            pkNo++
-          }
-       }
        return this.tokens[pkNo]
       }else{
         return this.getCurrentToken()
@@ -471,11 +466,7 @@ export class TokenGen {
     }else{
       let pkNo = this.currentTokenNo + 1
       if(this.tokens[pkNo]){
-        while (this.tokens[pkNo].type === TokenType.SingleLineComment ||this.tokens[pkNo].type === TokenType.MultiLineComment){
-          if (this.tokens[pkNo + 1]){
-           pkNo++
-          }
-       }
+       
        return this.tokens[pkNo]
       }else{
         return this.getCurrentToken()
@@ -493,9 +484,6 @@ export class TokenGen {
     if(steps && (steps + this.currentTokenNo) < this.tokens.length){
       this.currentTokenNo += steps
       if (this.tokens[this.currentTokenNo]){
-        while(this.tokens[this.currentTokenNo].type === TokenType.SingleLineComment ||this.tokens[this.currentTokenNo].type === TokenType.MultiLineComment){
-          this.currentTokenNo++;
-        }
         return this.tokens[this.currentTokenNo]
       }else{
         return this.getCurrentToken()
