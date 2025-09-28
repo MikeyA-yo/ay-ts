@@ -4,7 +4,7 @@
     "typescript": "^5.3.3"
   },
   "name": "ayscript",
-  "version": "1.0.334",
+  "version": "1.0.335",
   "main": "./dist/index.js",
   "files": [
     "dist/",

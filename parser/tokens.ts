@@ -426,7 +426,6 @@ export class TokenGen {
   private tokenizeWithLineNumbers(file: string): Token[] {
     // Tokenize the entire file at once
     const tokens = this.tokenizeLine(file);
-    console.log(tokens)
     return tokens;
   }
   /**
