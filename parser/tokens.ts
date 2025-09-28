@@ -377,6 +377,30 @@ function tokenize(line: string) {
         tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
   }
   tokens.push({type: TokenType.EOF, value:"", line: 1, column: 1})
+  
+  // Fix line and column tracking for all tokens
+  let lineNo = 1;
+  let colNo = 1;
+  tokens.forEach((t) => {
+    t.line = lineNo;
+    t.column = colNo;
+    
+    // Handle multi-line comments and strings that contain newlines
+    if (t.value.includes("\n") || t.value.includes("\r\n")) {
+      const lines = t.value.split(/\r\n|\r|\n/);
+      lineNo += lines.length - 1;
+      if (lines.length > 1) {
+        colNo = lines[lines.length - 1].length + 1;
+      } else {
+        colNo += t.value.length;
+      }
+    } else if (t.type === TokenType.NewLine) {
+      lineNo++;
+      colNo = 1;
+    } else {
+      colNo += t.value.length;
+    }
+  });
   //ignore whitespace and comment tokens
   return tokens.filter((t) => t.type !== TokenType.Whitespace && t.type !== TokenType.SingleLineComment && t.type !== TokenType.MultiLineComment);
 }
@@ -400,34 +424,9 @@ export class TokenGen {
   }
 
   private tokenizeWithLineNumbers(file: string): Token[] {
-    // Tokenize the entire file at once, then add line numbers
+    // Tokenize the entire file at once
     const tokens = this.tokenizeLine(file);
-    const lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
-    
-    // Add line numbers to tokens based on their position
-    let currentLine = 1;
-    let currentColumn = 1;
-    let lineIndex = 0;
-    
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
-      
-      // Update line tracking based on newline tokens
-      if (token.type === TokenType.NewLine) {
-        currentLine++;
-        currentColumn = 1;
-        lineIndex++;
-        continue;
-      }
-      
-      // Assign line and column numbers
-      token.line = currentLine;
-      token.column = currentColumn;
-      
-      // Update column position for next token
-      currentColumn += token.value.length;
-    }
-    
+    console.log(tokens)
     return tokens;
   }
   /**

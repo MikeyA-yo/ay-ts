@@ -445,6 +445,8 @@ let a = "my program variables are nicely scoped";
 let b = "hello world";
 let c = 6 + 3;
 let d = round(rand() * 12);
+let trueVar = true;
+let falseVar = false;
 let arr = [1, 3, 5, 7];
 function add(a, b) {
 let c = a + b;

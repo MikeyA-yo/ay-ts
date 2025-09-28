@@ -3,7 +3,8 @@ l b = "hello world"
 l c = 6 + 3
 
 l d = round(rand() * 12)
-
+l trueVar = true
+l falseVar = false
 l arr = [
     1,
     3,
