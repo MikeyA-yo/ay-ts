@@ -139,5 +139,14 @@ print(mathResult)
 
 l asks = input("WHat you gonna type ei? ")
 print(asks, len(asks))
-l numberP = numbers[randInt(0,3)]
+l numberP = numbers[randInt(0,4)]
 print(numberP)
+
+while(true){
+    writestdout(0)
+    break
+}
+writestdout("\n")
+writestdout("Hey ")
+writestdout("World\n")
+l addComp = 8 + 9 - (7/6*8)

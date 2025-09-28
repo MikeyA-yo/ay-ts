@@ -24,7 +24,21 @@ export class Parser {
   private addError(message: string) {
     const line = this.tokenizer.getCurrentLineNumber();
     const column = this.tokenizer.getCurrentColumnNumber();
-    const errorMsg = `Line ${line}, Column ${column}: ${message}`;
+    const currentToken = this.tokenizer.getCurrentToken();
+    
+    // Get the actual source line from the original file
+    const actualSourceLine = this.tokenizer.lines[line - 1] || "(empty line)";
+    
+    // Create a pointer to show where the error is
+    const pointer = ' '.repeat(Math.max(0, column - 1)) + '^';
+    
+    const errorMsg = `
+Error at Line ${line}, Column ${column}: ${message}
+${actualSourceLine}
+${pointer}
+
+Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'})`;
+    
     this.errors.push(errorMsg);
   }
 
@@ -308,7 +322,7 @@ export class Parser {
         !this.expectToken(TokenType.StringLiteral) &&
         !this.expectTokenVal("(")
       ) {
-        this.errors.push(`Invalid expression after operator '${op}'`);
+        this.addError(`Invalid expression after operator '${op}' - Expected identifier, number, string, or parenthesized expression`);
         return left; // Return what we have so far
       }
 
@@ -346,13 +360,13 @@ export class Parser {
     this.consume(); // Consume the opening '('
     // Important Error checks:
     if (this.expectTokenVal(")")) {
-      this.errors.push("Empty parentheses!");
+      this.addError("Empty parentheses - Expected an expression inside parentheses");
     }
     const expression = this.parseExpression(); // Parse the inner expression
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
-      this.errors.push("Unmatched parentheses!");
+      this.addError("Unmatched parentheses - Missing closing ')' for opening '('");
     }
 
     return { paren: expression }; // Return the parsed inner expression
@@ -468,10 +482,8 @@ export class Parser {
             }
             break;
           default:
-            this.errors.push(
-              `Unexpected token: ${
-                this.tokenizer.getCurrentToken()?.value
-              } at variable initialization for ${identifier}`
+            this.addError(
+              `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' of type ${this.tokenizer.getCurrentToken()?.type} at variable initialization for '${identifier}' - Expected a value (number, string, boolean, function, or expression)`
             );
             this.tokenizer.toNewLine();
           // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
@@ -482,19 +494,15 @@ export class Parser {
           initializer,
         };
       } else {
-        this.errors.push(
-          `Unexpected token: ${
-            this.tokenizer.getCurrentToken()?.value
-          } at variable initialization for ${identifier}`
+        this.addError(
+          `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' after variable identifier '${identifier}' - Expected '=' for variable assignment`
         );
         this.consume();
         this.tokenizer.toNewLine();
       }
     } else {
-      this.errors.push(
-        `Unexpected token: ${
-          this.tokenizer.getCurrentToken()?.value
-        } at variable declaration`
+      this.addError(
+        `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' of type ${this.tokenizer.getCurrentToken()?.type} in variable declaration - Expected identifier after 'l' keyword`
       );
       this.consume();
       this.tokenizer.toNewLine();
@@ -523,10 +531,8 @@ export class Parser {
         initializer,
       };
     } else {
-      this.errors.push(
-        `Unexpected token type: ${
-          this.tokenizer.peek().value
-        }, expected an identifier`
+      this.addError(
+        `Unexpected token type: '${this.tokenizer.peek().value}' (${this.tokenizer.peek().type}) after 'def' keyword - Expected identifier to define`
       );
       this.tokenizer.toNewLine();
     }
@@ -557,7 +563,7 @@ export class Parser {
           initializer: tk,
         };
       }
-      this.errors.push("Unexpected token after return statement");
+      this.addError(`Unexpected token '${this.tokenizer.getCurrentToken()?.value}' after return statement - Expected newline, semicolon, or end of block`);
       this.consume();
     }
   }
@@ -580,12 +586,8 @@ export class Parser {
         value: keyword.value,
       };
     } else {
-      this.errors.push(
-        `Unexpected token after ${keyword.value} keyword: ${
-          this.tokenizer.getCurrentToken()
-            ? this.tokenizer.getCurrentToken().value
-            : "End of file"
-        }`
+      this.addError(
+        `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' after ${keyword.value} keyword - Expected newline, semicolon, or end of block`
       );
       this.tokenizer.toNewLine();
       return <ASTNode>{
@@ -644,21 +646,21 @@ export class Parser {
     while (!this.expectTokenVal(")")) {
       const arg = this.parseLiteral();
       if (!arg) {
-        this.errors.push(`Invalid argument in function Declaration`);
+        this.addError(`SyntaxError: Invalid argument in function declaration - Expected parameter name`);
         break; // Prevent infinite loops if parseExpression fails
       }
       params.push(arg); // Collect the parsed argument
       if (this.expectTokenVal(",")) {
         this.consume(); // Consume the comma separator
       } else if (!this.expectTokenVal(")")) {
-        this.errors.push(`Expected ',' or ')' in function Declaration`);
+        this.addError(`SyntaxError: Expected ',' or ')' in function declaration parameters - Found '${this.tokenizer.getCurrentToken()?.value}' instead`);
         break;
       }
     }
     if (this.expectTokenVal(")")) {
       this.consume();
     } else {
-      this.errors.push(`Unmatched parentheses`);
+      this.addError(`SyntaxError: Unmatched parentheses in function declaration - Expected closing ')'`);
     }
     return params;
   }
@@ -677,7 +679,7 @@ export class Parser {
     if (this.expectTokenVal("}")) {
       this.consume();
     } else {
-      this.errors.push(`Block not closed properly`);
+      this.addError(`Block not closed properly - Expected '}' to close block opened with '{'`);
     }
     return body;
   }
@@ -689,14 +691,14 @@ export class Parser {
     if (this.expectTokenVal("(")) {
       test = this.parseExpression();
     } else {
-      this.errors.push(
-        `Expected '(' got ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '(' for if condition, got '${this.tokenizer.getCurrentToken()?.value}' - If statements require parentheses around the condition`
       );
       return null;
     }
     if (!this.expectTokenVal("{")) {
-      this.errors.push(
-        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '{' to start if statement body, got '${this.tokenizer.getCurrentToken()?.value}' - Code blocks must be wrapped in curly braces`
       );
       return null;
     }
@@ -722,8 +724,8 @@ export class Parser {
         alternate,
       };
     } else {
-      this.errors.push(
-        `Unexpected token after else keyword: ${this.tokenizer.getCurrentToken()}`
+      this.addError(
+        `SyntaxError: Unexpected token '${this.tokenizer.getCurrentToken()?.value}' after else keyword - Expected 'if' for else-if or '{' for else block`
       );
       return null;
     }
@@ -733,15 +735,15 @@ export class Parser {
     let test;
     let body;
     if (!this.expectTokenVal("(")) {
-      this.errors.push(
-        `Expected '(' got: ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '(' for while condition, got '${this.tokenizer.getCurrentToken()?.value}' - While loops require parentheses around the condition`
       );
       return null;
     }
     test = this.parseExpression();
     if (!this.expectTokenVal("{")) {
-      this.errors.push(
-        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '{' to start while loop body, got '${this.tokenizer.getCurrentToken()?.value}' - Code blocks must be wrapped in curly braces`
       );
       return null;
     }
@@ -759,8 +761,8 @@ export class Parser {
     let upgrade;
     let body;
     if (!this.expectTokenVal("(")) {
-      this.errors.push(
-        `Expected '(' got: ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '(' for for loop, got '${this.tokenizer.getCurrentToken()?.value}' - For loops require parentheses around the initialization, condition, and update`
       );
       return null;
     }
@@ -779,8 +781,8 @@ export class Parser {
       this.consume();
     }
     if (!this.expectTokenVal("{")) {
-      this.errors.push(
-        `Expected '{' got ${this.tokenizer.getCurrentToken().value}`
+      this.addError(
+        `SyntaxError: Expected '{' to start for loop body, got '${this.tokenizer.getCurrentToken()?.value}' - Code blocks must be wrapped in curly braces`
       );
       return null;
     }
@@ -840,7 +842,7 @@ export class Parser {
           if (baseToken.value === ";") {
             this.tokenizer.next();
           } else {
-            this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+            this.addError(`Unexpected punctuation: '${baseToken.value}' - Cannot start a statement with this punctuation`);
             this.tokenizer.next();
           }
           break;
@@ -862,12 +864,12 @@ export class Parser {
             let nodeO = this.parseExpression();
             nodeO && this.nodes.push(nodeO);
           } else {
-            this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+            this.addError(`Unexpected operator: '${baseToken.value}' - Cannot start a statement with this operator (expected prefix operators like !, -, ++, --)`);
             this.tokenizer.next();
           }
           break;
         default:
-          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.addError(`Unexpected statement start: '${baseToken.value}' - Expected variable declaration (l), function (f), if statement, loop, or expression`);
           this.tokenizer.next();
         //Syntax Error Likely
       }
@@ -929,7 +931,7 @@ export class Parser {
         if (baseToken.value === ";") {
           this.tokenizer.next();
         } else {
-          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.addError(`Unexpected punctuation: '${baseToken.value}' - Cannot start a statement with this punctuation`);
           this.tokenizer.next();
         }
         break;
@@ -952,12 +954,12 @@ export class Parser {
           let nodeO = this.parseExpression();
           nodeO && this.nodes.push(nodeO);
         } else {
-          this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+          this.addError(`Unexpected operator: '${baseToken.value}' - Cannot start a statement with this operator (expected prefix operators like !, -, ++, --)`);
           this.tokenizer.next();
         }
         break;
       default:
-        this.errors.push(`Unexpected statement start: ${baseToken.value}`);
+        this.addError(`Unexpected statement start: '${baseToken.value}' - Expected variable declaration (l), function (f), if statement, loop, or expression`);
         this.tokenizer.next();
       //Syntax Error Likely
       }

@@ -295,37 +295,21 @@ function errorlog(...msg) {
 
 
 // Synchronous input function using process.stdin (blocks execution)
+const fs = require("fs");
+
 function input(prompt = "") {
-  const fs = require('fs');
-  
-  // Display the prompt
-  if (prompt) {
-    process.stdout.write(prompt);
-  }
-  
-  // Read from stdin synchronously
-  let input = '';
-  const fd = process.stdin.fd;
-  const buffer = Buffer.alloc(1);
-  
-  while (true) {
-    const bytesRead = fs.readSync(fd, buffer, 0, 1, null);
-    if (bytesRead === 0) break;
-    
-    const char = buffer.toString();
-    
-    // Check for Enter key (newline)
-    if (char === '\n' || char === '\r') {
-      break;
-    }
-    
-    // Add character to input
-    input += char;
-  }
-  return input.trim();
+  if (prompt) process.stdout.write(prompt);
+
+  // Read from stdin until newline
+  const buffer = Buffer.alloc(1024);
+  const bytesRead = fs.readSync(process.stdin.fd, buffer, 0, buffer.length, null);
+
+  return buffer.toString("utf8", 0, bytesRead).trim();
 }
 
-
+function writestdout(...args){
+  process.stdout.write(args.join(' '));
+}
 const { readFileSync, writeFileSync } = require("node:fs");
 
 function read(path, options = "utf-8"){
@@ -544,8 +528,16 @@ let mathResult = add(factorial(3), fibonacci(5));
 print(mathResult)
 let asks = input("WHat you gonna type ei? ");
 print(asks, len(asks))
-let numberP = numbers[3];
+let numberP = numbers[randInt(0, 4)];
 print(numberP)
+while (true) {
+writestdout(0)
+break;
+}
+writestdout("\n")
+writestdout("Hey ")
+writestdout("World\n")
+let addComp = 8 + 9 - (7 / 6 * 8);
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 

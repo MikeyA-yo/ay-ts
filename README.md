@@ -184,9 +184,16 @@ The AY language includes a comprehensive standard library with the following fun
 
 #### Core Functions
 
-- `print(value)`: Prints a value to the console
-- `rand()`: Returns a random number between 0 and 1
-- `round(value)`: Rounds a number to the nearest integer
+- `print(...values)`: Prints values to the console
+- `input(prompt?)`: Gets user input from terminal (synchronous, blocks execution)
+- `coolPrint(msg)`: Prints message with "[COOL PRINT]" prefix
+- `fancyLog(msg)`: Prints message with "✨ FANCY LOG:" prefix
+- `stylishWarn(msg)`: Prints warning with "⚠️ STYLISH WARNING:" prefix
+- `errorPop(msg)`: Prints error with "❌ ERROR POP:" prefix
+- `errorlog(...msg)`: Prints error messages to console
+- `rand(min?, max?)`: Returns random number (0-1 if no params, or between min-max)
+- `randInt(min?, max?)`: Returns random integer between min and max
+- `round(num, precision?)`: Rounds number to specified decimal places (default 0)
 
 #### Math Functions
 
