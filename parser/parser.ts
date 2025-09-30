@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { isAllowedKey, isKeyword, TokenGen, tokens, TokenType } from "./tokens";
+import { isAllowedKey,  TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
@@ -47,12 +47,6 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
     return this.defines.has(value) ? this.defines.get(value)! : value;
   }
 
-  // Enhanced token value checking that resolves defines
-  private getResolvedTokenValue(): string {
-    const token = this.tokenizer.getCurrentToken();
-    if (!token) return "";
-    return this.resolveDefine(token.value);
-  }
   consume() {
     const token = this.tokenizer.getCurrentToken();
     // Create a new token with resolved value if it's a define
