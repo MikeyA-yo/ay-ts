@@ -16,22 +16,15 @@ export enum ASTNodeType {
   IfElse,
   Loop,
   Break,
-  Continue
+  Continue,
+  CallExpression,
+  MemberExpression,
+  NewExpression,
+  ArrayLiteral,
+  ObjectLiteral
 }
-type right = {
-    type?:string;
-    name?:string;
-    operator?:string;
-    left?:{
-        type?:string;
-        value?:string
-    };
-    right?:right
-}
-type left = {
-    type?:string;
-    value?:string
-}
+type right = ASTNode | string
+type left = ASTNode | string
 type init = {
     type?:string;
     value?:string;
@@ -86,8 +79,29 @@ export interface ASTNode {
   //if-else
   test?:ASTNode;
   consequent?:ASTNode;
-  alternate?:ASTNode
+  consequence?:ASTNode | ASTNode[];
+  alternate?:ASTNode | ASTNode[];
   index?:ASTNode | ASTNode[];
+  // expressions
+  operand?:ASTNode | string;
+  args?:ASTNode[];
+  callee?:ASTNode | string;
+  object?:ASTNode | string;
+  property?:string | ASTNode;
+  elements?:ASTNode[];
+  properties?: ObjectProperty[];
+  paren?:ASTNode | string;
+  postop?:string;
+  infixop?:string;
+  upgrade?:ASTNode;
+}
+export interface ObjectProperty {
+  key: string;
+  value?: ASTNode | string;
+  shorthand?: boolean;
+  method?: boolean;
+  params?: ASTNode[];
+  body?: ASTNode | ASTNode[];
 }
 export interface Variable{
   dataType: string,

@@ -4,7 +4,7 @@
     "typescript": "^5.3.3"
   },
   "name": "ayscript",
-  "version": "1.0.335",
+  "version": "1.0.4",
   "main": "./dist/index.js",
   "files": [
     "dist/",
@@ -15,10 +15,13 @@
   "scripts": {
     "build": "npx tsc",
     "prepublishOnly": "npm run build",
+    "ayc": "node dist/index.js",
+    "ay": "node dist/ay.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin":{
-    "ayc" : "./dist/index.js"
+  "bin": {
+    "ayc": "./dist/index.js",
+    "ay": "./dist/ay.js"
   },
   "keywords": [
     "AY",

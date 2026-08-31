@@ -1,5 +1,5 @@
 import { ASTNode, ASTNodeType, Variable } from "./asts";
-import { isAllowedKey,  TokenGen, tokens, TokenType } from "./tokens";
+import { TokenGen, tokens, TokenType } from "./tokens";
 
 export class Parser {
   defines: Map<string, string>;
@@ -19,6 +19,78 @@ export class Parser {
     this.vars = [];
     this.errors = [];
     this.defines = new Map();
+  }
+
+  private skipNewlines() {
+    while (this.expectToken(TokenType.NewLine)) {
+      this.consume();
+    }
+  }
+
+  private isEOF() {
+    return this.tokenizer.getCurrentToken()?.type === TokenType.EOF;
+  }
+
+  private binaryPrec(op: string): number {
+    switch (op) {
+      case "=":
+      case "+=":
+      case "-=":
+      case "*=":
+      case "/=":
+      case "%=":
+      case "&&=":
+      case "||=":
+        return 1;
+      case "??":
+        return 2;
+      case "||":
+        return 3;
+      case "&&":
+        return 4;
+      case "==":
+      case "!=":
+      case "===":
+      case "!==":
+        return 5;
+      case "<":
+      case ">":
+      case "<=":
+      case ">=":
+        return 6;
+      case "<<":
+      case ">>":
+      case ">>>":
+        return 7;
+      case "+":
+      case "-":
+      case "~":
+        return 8;
+      case "*":
+      case "/":
+      case "%":
+        return 9;
+      case "^":
+      case "**":
+        return 10;
+      default:
+        return -1;
+    }
+  }
+
+  private isRightAssoc(op: string): boolean {
+    return (
+      op === "=" ||
+      op === "+=" ||
+      op === "-=" ||
+      op === "*=" ||
+      op === "/=" ||
+      op === "%=" ||
+      op === "&&=" ||
+      op === "||=" ||
+      op === "**" ||
+      op === "^"
+    );
   }
 
   private addError(message: string) {
@@ -123,62 +195,199 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
   }
   parseNotnMinusExpression() {
     const operator = this.consume().value; // Consume the unary operator (! or -)
-    const operand = this.expectTokenVal("(")
-      ? this.parseParenExpr()
-      : this.parseExpression();
+    const operand = this.parseUnary();
     return <ASTNode><unknown>{
+      type: ASTNodeType.UnaryExpression,
       operator,
       operand,
     };
   }
-  parseCallExpr() {
-    const identifier = this.consume().value; // Consume the function identifier
+  parseArgList(): ASTNode[] {
     const args: ASTNode[] = [];
-
-    if (!this.expectTokenVal("(")) {
-      this.addError(`SyntaxError: Expected '(' after function identifier '${identifier}'`);
-      return null; // Return null if parentheses are not found
-    }
-
     this.consume(); // Consume the opening '('
-
-    // Check for an empty argument list
+    this.skipNewlines();
     if (this.expectTokenVal(")")) {
-      this.consume(); // Consume the closing ')'
-      return <ASTNode><unknown>{
-        type: "CallExpression",
-        identifier,
-        args,
-      };
+      this.consume();
+      return args;
     }
-
-    // Parse the arguments
-    while (!this.expectTokenVal(")")) {
+    while (!this.expectTokenVal(")") && !this.isEOF()) {
+      this.skipNewlines();
+      if (this.expectTokenVal(")")) {
+        break;
+      }
       const arg = this.parseExpression();
       if (!arg) {
-        this.addError(`SyntaxError: Invalid argument in function call '${identifier}'`);
-        break; // Prevent infinite loops if parseExpression fails
+        this.addError(`SyntaxError: Invalid argument in function call`);
+        break;
       }
-      args.push(arg); // Collect the parsed argument
+      args.push(arg);
+      this.skipNewlines();
       if (this.expectTokenVal(",")) {
-        this.consume(); // Consume the comma separator
+        this.consume();
       } else if (!this.expectTokenVal(")")) {
-        this.addError(`SyntaxError: Expected ',' or ')' in function call '${identifier}'`);
+        this.addError(`SyntaxError: Expected ',' or ')' in function call`);
         break;
       }
     }
-
     if (this.expectTokenVal(")")) {
-      this.consume(); // Consume the closing ')'
+      this.consume();
     } else {
-      this.addError(`SyntaxError: Unmatched parentheses in function call '${identifier}'`);
+      this.addError(`SyntaxError: Unmatched parentheses in function call`);
     }
-
+    return args;
+  }
+  parseCallExpr() {
+    const identifier = this.consume().value; // Consume the function identifier
+    if (!this.expectTokenVal("(")) {
+      this.addError(`SyntaxError: Expected '(' after function identifier '${identifier}'`);
+      return null;
+    }
+    const args = this.parseArgList();
     return <ASTNode><unknown>{
       type: "CallExpression",
       identifier,
+      callee: identifier,
       args,
     };
+  }
+  parseUnary(): ASTNode {
+    if (
+      this.expectTokenVal("!") ||
+      this.expectTokenVal("-") ||
+      this.expectTokenVal("++") ||
+      this.expectTokenVal("--")
+    ) {
+      const operator = this.consume().value;
+      const operand = this.parseUnary();
+      if (!operand) {
+        this.addError(`Expected expression after '${operator}'`);
+      }
+      if (operator === "++" || operator === "--") {
+        const identifier =
+          typeof operand === "string"
+            ? operand
+            : (operand as any)?.identifier || (operand as any)?.name;
+        return <ASTNode><unknown>{ infixop: operator, identifier: identifier ?? operand };
+      }
+      return <ASTNode><unknown>{
+        type: ASTNodeType.UnaryExpression,
+        operator,
+        operand,
+      };
+    }
+    if (this.expectTokenVal("new")) {
+      this.consume();
+      const callee = this.parseUnary();
+      return <ASTNode><unknown>{
+        type: "NewExpression",
+        callee,
+        identifier: typeof callee === "string" ? callee : (callee as any)?.identifier,
+        args: (callee as any)?.args,
+      };
+    }
+    return this.parsePostfix();
+  }
+  parsePostfix(): ASTNode {
+    let left = this.parsePrimary();
+    if (!left) {
+      return left;
+    }
+    while (true) {
+      if (this.expectTokenVal("(")) {
+        const args = this.parseArgList();
+        const identifier =
+          typeof left === "string"
+            ? left
+            : (left as any)?.identifier || (left as any)?.name;
+        left = <ASTNode><unknown>{
+          type: "CallExpression",
+          identifier,
+          callee: left,
+          args,
+        };
+      } else if (this.expectTokenVal("[")) {
+        this.consume();
+        this.skipNewlines();
+        const index = this.parseExpression();
+        this.skipNewlines();
+        if (this.expectTokenVal("]")) {
+          this.consume();
+        } else {
+          this.addError(`SyntaxError: Expected ']' after index`);
+          break;
+        }
+        left = <ASTNode><unknown>{
+          object: left,
+          identifier: typeof left === "string" ? left : undefined,
+          index,
+        };
+      } else if (this.expectTokenVal(".")) {
+        this.consume();
+        if (
+          !this.expectToken(TokenType.Identifier) &&
+          !this.expectToken(TokenType.Keyword)
+        ) {
+          this.addError(`SyntaxError: Expected property name after '.'`);
+          break;
+        }
+        // Keep the raw property name — defines should not rewrite obj.var to obj.l
+        const property = this.tokenizer.getCurrentToken().value;
+        this.tokenizer.next();
+        left = <ASTNode><unknown>{
+          type: "MemberExpression",
+          object: left,
+          property,
+        };
+      } else if (this.expectTokenVal("++") || this.expectTokenVal("--")) {
+        const postop = this.consume().value;
+        const identifier =
+          typeof left === "string"
+            ? left
+            : (left as any)?.identifier || (left as any)?.name;
+        left = <ASTNode><unknown>{
+          postop,
+          identifier: identifier ?? left,
+        };
+      } else {
+        break;
+      }
+    }
+    return left;
+  }
+  parsePrimary(): ASTNode {
+    if (this.expectTokenVal("(")) {
+      return this.parseParenExpr() as ASTNode;
+    }
+    if (this.expectTokenVal("[")) {
+      return this.parseArray();
+    }
+    if (this.expectTokenVal("{")) {
+      return this.parseObject();
+    }
+    if (this.expectTokenVal("f")) {
+      return this.parseFunc();
+    }
+    if (this.expectToken(TokenType.Identifier)) {
+      return this.consume().value as unknown as ASTNode;
+    }
+    if (
+      this.expectToken(TokenType.Literal) ||
+      this.expectToken(TokenType.StringLiteral)
+    ) {
+      return this.consume().value as unknown as ASTNode;
+    }
+    if (
+      this.expectTokenVal("true") ||
+      this.expectTokenVal("false") ||
+      this.expectTokenVal("null") ||
+      this.expectTokenVal("this")
+    ) {
+      return this.consume().value as unknown as ASTNode;
+    }
+    this.addError(
+      `Invalid expression - Expected identifier, number, string, or parenthesized expression, got '${this.tokenizer.getCurrentToken()?.value}'`
+    );
+    return null;
   }
   parseArray() {
     let elements: ASTNode[] = [];
@@ -186,19 +395,25 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
 
     if (this.expectTokenVal("]")) {
       this.consume();
-      return <ASTNode><unknown>{ elements };
+      return <ASTNode><unknown>{ type: ASTNodeType.ArrayLiteral, elements };
     }
 
-    while (!this.expectTokenVal("]")) {
+    while (!this.expectTokenVal("]") && !this.isEOF()) {
       // Skip newlines
       if (this.expectToken(TokenType.NewLine)) {
         this.consume();
         continue;
       }
 
+      const pos = this.tokenizer.currentTokenNo;
       let element = this.parseExpression();
       if (!element) {
         this.addError(`SyntaxError: Invalid array element`);
+        break;
+      }
+      if (this.tokenizer.currentTokenNo === pos) {
+        this.addError(`SyntaxError: Invalid array element`);
+        this.consume();
         break;
       }
       elements.push(element);
@@ -217,7 +432,127 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
       this.addError(`SyntaxError: Unmatched brackets in array`);
     }
 
-    return <ASTNode><unknown>{ elements };
+    return <ASTNode><unknown>{ type: ASTNodeType.ArrayLiteral, elements };
+  }
+  parseObject() {
+    this.consume(); // Consume the opening '{'
+    this.skipNewlines();
+    const properties: {
+      key: string;
+      value?: ASTNode | string;
+      shorthand?: boolean;
+      method?: boolean;
+      params?: ASTNode[];
+      body?: ASTNode[];
+    }[] = [];
+
+    if (this.expectTokenVal("}")) {
+      this.consume();
+      return <ASTNode><unknown>{ type: ASTNodeType.ObjectLiteral, properties };
+    }
+
+    while (!this.expectTokenVal("}") && !this.isEOF()) {
+      this.skipNewlines();
+      if (this.expectTokenVal("}")) {
+        break;
+      }
+      if (this.expectTokenVal(",")) {
+        this.consume();
+        continue;
+      }
+
+      const pos = this.tokenizer.currentTokenNo;
+      const prop = this.parseObjectProperty();
+      if (!prop) {
+        break;
+      }
+      properties.push(prop);
+
+      this.skipNewlines();
+      if (this.expectTokenVal(",")) {
+        this.consume();
+      } else if (!this.expectTokenVal("}")) {
+        this.addError(
+          `SyntaxError: Expected ',' or '}' in object literal - Found '${this.tokenizer.getCurrentToken()?.value}' instead`
+        );
+        break;
+      }
+
+      if (this.tokenizer.currentTokenNo === pos) {
+        this.addError(`SyntaxError: Invalid object property`);
+        this.consume();
+        break;
+      }
+    }
+
+    if (this.expectTokenVal("}")) {
+      this.consume();
+    } else {
+      this.addError(`SyntaxError: Unmatched braces in object literal - Expected '}' to close '{'`);
+    }
+
+    return <ASTNode><unknown>{ type: ASTNodeType.ObjectLiteral, properties };
+  }
+  parseObjectProperty() {
+    const token = this.tokenizer.getCurrentToken();
+    if (!token || token.type === TokenType.EOF) {
+      this.addError(`SyntaxError: Expected property name in object literal`);
+      return null;
+    }
+
+    let key: string;
+    let canShorthand = false;
+    if (
+      token.type === TokenType.Identifier ||
+      token.type === TokenType.Keyword ||
+      token.type === TokenType.Literal ||
+      token.type === TokenType.StringLiteral
+    ) {
+      // Raw name so `def` aliases do not rewrite object keys
+      key = token.value;
+      canShorthand = token.type === TokenType.Identifier;
+      this.tokenizer.next();
+    } else {
+      this.addError(
+        `SyntaxError: Expected property name in object literal, got '${token.value}'`
+      );
+      return null;
+    }
+
+    this.skipNewlines();
+
+    // method shorthand: { greet(name) { return name } }
+    if (this.expectTokenVal("(")) {
+      const params = this.parseFuncParams();
+      this.skipNewlines();
+      if (!this.expectTokenVal("{")) {
+        this.addError(
+          `SyntaxError: Expected '{' for object method '${key}'`
+        );
+        return { key, method: true, params, body: [] };
+      }
+      const body = this.parseBlockStmt();
+      return { key, method: true, params, body };
+    }
+
+    if (this.expectTokenVal(":")) {
+      this.consume();
+      this.skipNewlines();
+      const value = this.parseExpression();
+      if (!value) {
+        this.addError(`SyntaxError: Expected value after ':' for property '${key}'`);
+      }
+      return { key, value };
+    }
+
+    if (canShorthand && (this.expectTokenVal(",") || this.expectTokenVal("}"))) {
+      return { key, shorthand: true, value: key };
+    }
+
+    this.addError(
+      `SyntaxError: Expected ':' after property name '${key}' in object literal`
+    );
+    return { key, value: key };
   }
   parseIncDec() {
     if (
@@ -271,92 +606,52 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
       index,
     };
   }
-  parseExpression() {
-    let left;
-
-    if (this.expectTokenVal("(")) {
-      // Handle parenthesized expressions
-      left = this.parseParenExpr();
-    } else if (this.expectTokenVal("!") || this.expectTokenVal("-")) {
-      left = this.parseNotnMinusExpression();
-    } else if (
-      this.expectToken(TokenType.Identifier) &&
-      this.expectPeekVal("(")
-    ) {
-      left = this.parseCallExpr();
-    } else if (this.expectTokenVal("[")) {
-      left = this.parseArray();
-    } else if (this.expectToken(TokenType.Identifier) && this.expectPeekVal("[")) {
-      left = this.parseArrIndex();
-    } else if (this.expectTokenVal("f")) {
-      left = this.parseFunc();
-    } else if (
-      this.expectTokenVal("--") ||
-      this.expectTokenVal("++") ||
-      (this.expectToken(TokenType.Identifier) &&
-        (this.expectPeekVal("--") || this.expectPeekVal("++")))
-    ) {
-      left = this.parseIncDec();
-    } else {
-      // Consume basic literals/identifiers
-      left = this.consume().value;
+  parseExpression(minPrec: number = 0) {
+    let left = this.parseUnary();
+    if (!left) {
+      return left;
     }
 
-    // Check if there’s an operator next
-    if (this.expectToken(TokenType.Operator) || this.expectTokenVal("~")) {
+    while (this.expectToken(TokenType.Operator) || this.expectTokenVal("~")) {
       if (this.expectTokenVal("~")) {
         this.tokenizer.getCurrentToken().value = "+";
         this.tokenizer.getCurrentToken().type = TokenType.Operator;
       }
-      const op = this.consume().value;
-      // Validate the next token for the right-hand side
-      if (
-        !this.expectToken(TokenType.Identifier) &&
-        !this.expectToken(TokenType.Literal) &&
-        !this.expectToken(TokenType.StringLiteral) &&
-        !this.expectTokenVal("(")
-      ) {
-        this.addError(`Invalid expression after operator '${op}' - Expected identifier, number, string, or parenthesized expression`);
-        return left; // Return what we have so far
+      const op = this.tokenizer.getCurrentToken().value;
+      const prec = this.binaryPrec(op);
+      if (prec < 0 || prec < minPrec) {
+        break;
       }
-
-      // Handle the right-hand side of the expression
-      let right;
-      if (
-        //Line and file end terminators
-        this.expectPeek(TokenType.EOF) ||
-        this.expectPeek(TokenType.NewLine) ||
-        this.expectPeekVal(";") ||
-        //parentheses expr
-        this.expectPeekVal(")") ||
-        //array values and function call exprs end
-        this.expectPeekVal(",")
-      ) {
-        right = this.consume().value; // Simple right-hand expression (now resolved)
-        if (!this.expectTokenVal(")") && !this.expectTokenVal(",")) {
-          this.consume();
-        }
-      } else {
-        right = this.parseExpression(); // Recursively parse complex expressions
+      this.consume();
+      this.skipNewlines();
+      const nextMin = this.isRightAssoc(op) ? prec : prec + 1;
+      const right = this.parseExpression(nextMin);
+      if (!right) {
+        this.addError(
+          `Invalid expression after operator '${op}' - Expected identifier, number, string, or parenthesized expression`
+        );
+        return left;
       }
-
-      return <ASTNode>{
+      left = <ASTNode><unknown>{
+        type: ASTNodeType.BinaryExpression,
         operator: op,
         left,
         right,
       };
     }
 
-    return left; // Return single values if no operator is present
+    return left;
   }
 
   parseParenExpr() {
     this.consume(); // Consume the opening '('
+    this.skipNewlines();
     // Important Error checks:
     if (this.expectTokenVal(")")) {
       this.addError("Empty parentheses - Expected an expression inside parentheses");
     }
     const expression = this.parseExpression(); // Parse the inner expression
+    this.skipNewlines();
     if (this.expectTokenVal(")")) {
       this.consume(); // Consume the closing ')'
     } else {
@@ -370,7 +665,6 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
     this.tokenizer.next();
     let identifier;
     let initializer;
-    let dT = "unknown";
     if (this.expectToken(TokenType.Identifier)) {
       identifier = this.consume()?.value;
       //this check is used to know whether it's just a plain declaration, without any value initialised in the variable
@@ -380,107 +674,36 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
         this.expectTokenVal(";")
       ) {
         this.consume();
+        this.vars.push({
+          dataType: "unknown",
+          val: identifier,
+          nodePos: this.nodes.length,
+        });
         return <ASTNode>{
           type: ASTNodeType.VariableDeclaration,
           identifier,
         };
       }
-      // here it is declaration and initialisation, so i have to check the type of value on the other side
-      // to know how to go about parsing
       if (this.expectTokenVal(tokens.assign)) {
         this.consume();
-        const leftTokenValues = this.tokenizer
-          .getTokenLeftLine()
-          .map((t) => t.value);
-        switch (this.tokenizer.getCurrentToken().type) {
-          case TokenType.Identifier:
-            //todo
-            if (leftTokenValues.length === 1) {
-              // the identifier value
-              let idtV = this.tokenizer.getCurrentToken().value;
-              initializer = this.parseLiteral();
-              if (this.isDefinedVar(idtV)) {
-                let idDt = "";
-                this.vars.map((v) => {
-                  if (v.val === idtV) {
-                    idDt = v.dataType;
-                  }
-                });
-                dT = idDt;
-              }
-              let bL = this.nodes.length;
-              this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
-            } else {
-              initializer = this.parseExpression();
-            }
-            break;
-          case TokenType.Literal:
-            if (leftTokenValues.length === 1) {
-              initializer = this.parseLiteral();
-              dT = "number";
-              let bL = this.nodes.length;
-              this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
-            } else {
-              initializer = this.parseExpression();
-            }
-            break;
-          case TokenType.StringLiteral:
-            //todo
-            if (
-              leftTokenValues.length === 1 ||
-              this.expectPeek(TokenType.NewLine)
-            ) {
-              initializer = this.parseLiteral();
-              dT = "string";
-              let bL = this.nodes.length;
-              this.vars.push({ dataType: dT, val: identifier, nodePos: bL });
-            } else {
-              initializer = this.parseExpression();
-            }
-            break;
-          case TokenType.Punctuation:
-            initializer = this.parseExpression();
-            break;
-          case TokenType.Operator:
-            //prefix operators
-            if (
-              this.expectTokenVal(tokens.not) ||
-              this.expectTokenVal(tokens.sub) ||
-              this.expectTokenVal("--") ||
-              this.expectTokenVal("++")
-            ) {
-              //todo
-              initializer = this.parseExpression();
-              break;
-            } else {
-              // another error, fallthrough
-            }
-          case TokenType.Keyword:
-            if (this.expectTokenVal("true") || this.expectTokenVal("false")) {
-              initializer = this.parseExpression();
-              this.vars.push({
-                dataType: "boolean",
-                val: identifier,
-                nodePos: this.nodes.length,
-              });
-            } else {
-              if (isAllowedKey(this.tokenizer.getCurrentToken().value)) {
-                switch (this.tokenizer.getCurrentToken().value) {
-                  case "f":
-                    initializer = this.parseFunc();
-                    break;
-                  default:
-                    initializer = this.parseLiteral();
-                }
-              }
-            }
-            break;
-          default:
-            this.addError(
-              `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' of type ${this.tokenizer.getCurrentToken()?.type} at variable initialization for '${identifier}' - Expected a value (number, string, boolean, function, or expression)`
-            );
-            this.tokenizer.toNewLine();
-          // an error (variable value can't be keyword or operator, but some things like () and [], {} may fall in punctuation which can be a variable)
+        this.skipNewlines();
+        initializer = this.parseExpression();
+        if (!initializer) {
+          this.addError(
+            `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' of type ${this.tokenizer.getCurrentToken()?.type} at variable initialization for '${identifier}' - Expected a value (number, string, boolean, function, or expression)`
+          );
+          this.tokenizer.toNewLine();
+        }
+        this.vars.push({
+          dataType: "unknown",
+          val: identifier,
+          nodePos: this.nodes.length,
+        });
+        if (
+          this.expectToken(TokenType.NewLine) ||
+          this.expectTokenVal(";")
+        ) {
+          this.consume();
         }
         return <ASTNode>{
           type: ASTNodeType.VariableDeclaration,
@@ -532,34 +755,31 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
     }
   }
   parseReturn() {
+    this.consume(); // consume 'return'
     if (
-      this.expectPeek(TokenType.NewLine) ||
-      this.expectPeekVal(";") ||
-      this.expectPeekVal("}")
+      this.expectToken(TokenType.NewLine) ||
+      this.expectToken(TokenType.EOF) ||
+      this.expectTokenVal(";") ||
+      this.expectTokenVal("}")
     ) {
-      let rtToken = this.consume();
+      if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+        this.consume();
+      }
       return <ASTNode>{
         type: ASTNodeType.Return,
-        value: rtToken.value,
       };
-    } else {
-      if (
-        this.expectPeek(TokenType.Identifier) ||
-        this.expectPeek(TokenType.Literal) ||
-        this.expectPeek(TokenType.StringLiteral) ||
-        isAllowedKey(this.tokenizer.peek().value)
-      ) {
-        this.consume();
-        const tk = this.parseExpression();
-
-        return <ASTNode>{
-          type: ASTNodeType.Return,
-          initializer: tk,
-        };
-      }
-      this.addError(`Unexpected token '${this.tokenizer.getCurrentToken()?.value}' after return statement - Expected newline, semicolon, or end of block`);
+    }
+    const tk = this.parseExpression();
+    if (
+      this.expectToken(TokenType.NewLine) ||
+      this.expectTokenVal(";")
+    ) {
       this.consume();
     }
+    return <ASTNode>{
+      type: ASTNodeType.Return,
+      initializer: tk,
+    };
   }
   parseBreakNCont() {
     const keyword = this.consume(); // Get the break or continue keyword
@@ -637,7 +857,7 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
   parseFuncParams() {
     this.consume();
     let params: ASTNode[] = [];
-    while (!this.expectTokenVal(")")) {
+    while (!this.expectTokenVal(")") && !this.isEOF()) {
       const arg = this.parseLiteral();
       if (!arg) {
         this.addError(`SyntaxError: Invalid argument in function declaration - Expected parameter name`);
@@ -661,14 +881,26 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
   parseBlockStmt() {
     this.consume();
     let body: ASTNode[] = [];
-    while (!this.expectTokenVal("}")) {
+    while (!this.expectTokenVal("}") && !this.isEOF()) {
       // Skip newlines and statement terminator
       if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
         this.consume();
         continue;
       }
+      const pos = this.tokenizer.currentTokenNo;
       let node = this.checkParseReturn();
-      body.push(node);
+      if (node) {
+        body.push(node);
+      }
+      if (this.tokenizer.currentTokenNo === pos) {
+        this.addError(
+          `Unexpected token '${this.tokenizer.getCurrentToken()?.value}' in block`
+        );
+        this.consume();
+        if (this.isEOF()) {
+          break;
+        }
+      }
     }
     if (this.expectTokenVal("}")) {
       this.consume();
@@ -770,7 +1002,14 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
       this.consume();
     }
     upgrade = this.parseExpression();
-    this.consume()
+    this.skipNewlines();
+    if (this.expectTokenVal(")")) {
+      this.consume();
+    } else {
+      this.addError(
+        `SyntaxError: Expected ')' after for loop header, got '${this.tokenizer.getCurrentToken()?.value}'`
+      );
+    }
     if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
       this.consume();
     }
@@ -827,8 +1066,26 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
         case "for":
           node = this.parseForLoop()  
           break
+        case "imp@":
+        case "exp@":
+          this.addError(
+            `'${resolvedValue}' is reserved for module import/export and is not implemented yet`
+          );
+          this.consume();
+          this.tokenizer.toNewLine();
+          break;
+        case "true":
+        case "false":
+        case "null":
+        case "this":
+        case "new":
+          node = this.parseExpression();
+          break;
         default:
-          //hehe
+          this.addError(
+            `Unexpected keyword '${resolvedValue}' - Cannot start a statement with this keyword`
+          );
+          this.consume();
       }
     } else {
       switch (baseToken.type) {
@@ -855,8 +1112,7 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
             this.expectTokenVal("--") ||
             this.expectTokenVal("++")
           ) {
-            let nodeO = this.parseExpression();
-            nodeO && this.nodes.push(nodeO);
+            node = this.parseExpression();
           } else {
             this.addError(`Unexpected operator: '${baseToken.value}' - Cannot start a statement with this operator (expected prefix operators like !, -, ++, --)`);
             this.tokenizer.next();
@@ -914,10 +1170,28 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
         case "for":
           let nodeFo = this.parseForLoop();
           nodeFo && this.nodes.push(nodeFo);
-          break;   
-        default:
+          break;
+        case "imp@":
+        case "exp@":
+          this.addError(
+            `'${resolvedValue}' is reserved for module import/export and is not implemented yet`
+          );
           this.consume();
-          //hehe
+          this.tokenizer.toNewLine();
+          break;
+        case "true":
+        case "false":
+        case "null":
+        case "this":
+        case "new":
+          let nodeKw = this.parseExpression();
+          nodeKw && this.nodes.push(nodeKw);
+          break;
+        default:
+          this.addError(
+            `Unexpected keyword '${resolvedValue}' - Cannot start a statement with this keyword`
+          );
+          this.consume();
       }
     } else {
       switch (baseToken.type) {
@@ -961,7 +1235,18 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
   }
   start() {
     while (this.tokenizer.getCurrentToken().type !== TokenType.EOF) {
+      const pos = this.tokenizer.currentTokenNo;
       this.checkAndParse();
+      if (this.tokenizer.currentTokenNo === pos) {
+        const tok = this.tokenizer.getCurrentToken();
+        if (!tok || tok.type === TokenType.EOF) {
+          break;
+        }
+        this.addError(
+          `Unexpected token '${tok.value}' - parser could not advance`
+        );
+        this.consume();
+      }
     }
   }
 }

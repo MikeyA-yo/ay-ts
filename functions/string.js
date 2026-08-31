@@ -3,8 +3,11 @@ function split(str, delimiter) {
   return str.split(delimiter);
 }
 
-function reverse(str) {
-  return str.split("").reverse().join("");
+function reverse(val) {
+  if (Array.isArray(val)) {
+    return val.reverse();
+  }
+  return String(val).split("").reverse().join("");
 }
 
 function join(arr, delimiter) {

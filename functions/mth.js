@@ -1,5 +1,12 @@
-function rand(min = 0, max = 0) {
-  return Math.random() * (max - min + 1) + min
+function rand(min, max) {
+  if (min === undefined && max === undefined) {
+    return Math.random();
+  }
+  if (max === undefined) {
+    max = min;
+    min = 0;
+  }
+  return Math.random() * (max - min) + min;
 }
 
 function randInt(min = 0, max = 0) {

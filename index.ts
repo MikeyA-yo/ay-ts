@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { Parser } from "./parser/parser";
 import compileAST from "./parser/astcompiler";
-import packageJson from "./package.json" 
-// Get the directory where this module is located
-// When compiled to CommonJS, __dirname will be available
-declare const __dirname: string;
+import packageJson from "./package.json";
 
-const fileName = process.argv[2];
+declare const __dirname: string;
+declare const require: { main: unknown };
+
 const VERSION = packageJson.version;
 const AY_FancyName = `
    █████╗ ██╗   ██╗
@@ -17,77 +17,173 @@ const AY_FancyName = `
   ██╔══██║  ╚██╔╝  
   ██║  ██║   ██║   
   ╚═╝  ╚═╝   ╚═╝   
-`
-const welcome = `${AY_FancyName}
+`;
+
+const usage = `${AY_FancyName}
 AY Programming Language Compiler v${VERSION}
 
 A modern, expressive programming language that compiles to JavaScript.
-Features: Variables (l), Functions (f), Comments, Control Flow, Async Operations, and more!
 
-Usage: ayc <filename>
-Example: ayc myprogram.ay
+Usage:
+  ayc <file.ay>                 Compile to JavaScript
+  ayc build <file.ay>           Same as compile
+  ayc run <file.ay> [args...]   Compile and run
+  ay  <file.ay> [args...]       Compile and run (same as ayc run)
+
+  ayc -h, --help                Show this help
+  ayc -v, --version             Show version
+
+Examples:
+  ayc myprogram.ay
+  ayc run myprogram.ay
+  ayc run myprogram.ay Alice 42
+  ay myprogram.ay
 
 Visit: https://github.com/MikeyA-yo/ay-ts
 `;
-if (!fileName) {
-  console.error(welcome);
-  console.error("⚠️  No filename provided");
+
+type Command = "build" | "run";
+
+function isHelp(arg: string) {
+  return arg === "-h" || arg === "--help" || arg === "help";
+}
+
+function isVersion(arg: string) {
+  return arg === "-v" || arg === "--version" || arg === "version";
+}
+
+function printVersion() {
+  console.log(`ayc v${VERSION}`);
+}
+
+function die(message: string, showUsage = false): never {
+  if (showUsage) {
+    console.error(usage);
+  } else {
+    console.error(`${AY_FancyName} Error encountered`);
+  }
+  console.error(message);
   process.exit(1);
 }
 
-const filePath = join(process.cwd(), fileName);
-const fileText = readFileSync(filePath, "utf-8");
-const fileNameParts = fileName.split(".");
-if (fileNameParts[fileNameParts.length - 1] !== "ay") {
-  console.error(welcome);
-  console.error("⚠️  Invalid file extension. Please use .ay files only.");
-  process.exit(1);
+function loadStdlib() {
+  const dir = join(__dirname, "..", "functions");
+  return [
+    readFileSync(join(dir, "arr.js"), "utf-8"),
+    readFileSync(join(dir, "mth.js"), "utf-8"),
+    readFileSync(join(dir, "string.js"), "utf-8"),
+    readFileSync(join(dir, "print.js"), "utf-8"),
+    readFileSync(join(dir, "fs.js"), "utf-8"),
+    readFileSync(join(dir, "date.js"), "utf-8"),
+    readFileSync(join(dir, "timer.js"), "utf-8"),
+    readFileSync(join(dir, "http.js"), "utf-8"),
+  ].join("\n");
 }
-const arrF = readFileSync(join(__dirname, "..", "functions", "arr.js"), "utf-8");
-const mathF = readFileSync(join(__dirname, "..", "functions", "mth.js"), "utf-8");
-const stringF = readFileSync(join(__dirname, "..", "functions", "string.js"), "utf-8");
-const printF = readFileSync(join(__dirname, "..", "functions", "print.js"), "utf-8");
-const fsF = readFileSync(join(__dirname, "..", "functions", "fs.js"), "utf-8");
-const dateF = readFileSync(join(__dirname, "..", "functions", "date.js"), "utf-8");
-const timeF = readFileSync(join(__dirname, "..", "functions", "timer.js"), "utf-8");
-const httpF = readFileSync(join(__dirname, "..", "functions", "http.js"), "utf-8");
-// const mathFancy = `
-//   ██╗   ██╗███████╗██████╗ ██╗   ██╗███████╗██████╗
-//   ╚██╗ ██╔╝██╔════╝██╔══██╗╚██╗ ██╔╝██╔════╝██╔══██╗
-//    ╚████╔╝ █████╗  ██████╔╝ ╚████╔╝ █████╗  ██████╔╝
-//     ╚██╔╝  ██╔══╝  ██╔══██╗  ╚██╔╝  ██╔══╝  ██╔══██╗
-//      ██║   ███████╗██║  ██║   ██║   ███████╗██║  ██║
-//      ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
-// `
-const parser = new Parser(fileText);
-parser.start();
-if (parser.errors.length > 0) {
 
-  console.error(`${AY_FancyName} Error encountered\nError compiling ${fileName}\n`);
-  console.error("Errors:");
-  parser.errors.forEach((error) => {
-    console.error(error);
+function compileFile(fileName: string) {
+  const fileNameParts = fileName.split(".");
+  if (fileNameParts[fileNameParts.length - 1] !== "ay") {
+    die("Invalid file extension. Please use .ay files only.", true);
+  }
+
+  const filePath = join(process.cwd(), fileName);
+  let fileText: string;
+  try {
+    fileText = readFileSync(filePath, "utf-8");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    die(`Could not read file '${fileName}'\n${message}`, true);
+  }
+
+  const parser = new Parser(fileText);
+  parser.start();
+  if (parser.errors.length > 0) {
+    console.error(`${AY_FancyName} Error encountered\nError compiling ${fileName}\n`);
+    console.error("Errors:");
+    parser.errors.forEach((error) => {
+      console.error(error);
+    });
+    process.exit(1);
+  }
+
+  const compiled = compileAST(parser.nodes);
+  const output = `${loadStdlib()}\n${compiled}\n`;
+  const baseName = fileNameParts.slice(0, -1).join(".");
+  const outputFileName = baseName.replace(/^.*[\\/]/, "") + ".js";
+  writeFileSync(outputFileName, output);
+  return outputFileName;
+}
+
+function runCompiled(outputFileName: string, programArgs: string[]) {
+  const scriptPath = join(process.cwd(), outputFileName);
+  const result = spawnSync(process.execPath, [scriptPath, ...programArgs], {
+    stdio: "inherit",
   });
-  process.exit(1);
+  if (result.error) {
+    die(`Failed to run ${outputFileName}: ${result.error.message}`);
+  }
+  process.exit(result.status ?? 1);
 }
 
-const ast = parser.nodes;
-const compiled = compileAST(ast);
-const output = `
-${arrF}
-${mathF}
-${stringF}
-${printF}
-${fsF}
-${dateF}
-${timeF}
-${compiled}
-${httpF}
-`;
-const baseName = fileNameParts.slice(0, -1).join(".");
-const outputFileName = baseName.replace(/^.*[\\/]/, "") + ".js";
-console.log(`✅ Compiled ${fileName} to ${outputFileName}`);
-console.log(`🚀 Run with: node ${outputFileName}`);
-writeFileSync(outputFileName, output);
-// console.log(`Running ${outputFileName}...`);
-// eval(output);
+export function runCli(defaultCommand: Command = "build") {
+  const raw = process.argv.slice(2);
+
+  if (raw.length === 0) {
+    die("No filename provided", true);
+  }
+
+  if (isHelp(raw[0])) {
+    console.log(usage);
+    process.exit(0);
+  }
+  if (isVersion(raw[0])) {
+    printVersion();
+    process.exit(0);
+  }
+
+  let command: Command = defaultCommand;
+  let rest = raw;
+
+  if (raw[0] === "run" || raw[0] === "--run") {
+    command = "run";
+    rest = raw.slice(1);
+  } else if (raw[0] === "build" || raw[0] === "compile") {
+    command = "build";
+    rest = raw.slice(1);
+  }
+
+  if (rest.length === 0) {
+    die(`No filename provided for '${command}'`, true);
+  }
+  if (isHelp(rest[0])) {
+    console.log(usage);
+    process.exit(0);
+  }
+  if (isVersion(rest[0])) {
+    printVersion();
+    process.exit(0);
+  }
+
+  const fileName = rest[0];
+  let programArgs = rest.slice(1);
+  if (programArgs[0] === "--") {
+    programArgs = programArgs.slice(1);
+  }
+
+  const outputFileName = compileFile(fileName);
+  console.log(`Compiled ${fileName} to ${outputFileName}`);
+
+  if (command === "run") {
+    runCompiled(outputFileName, programArgs);
+    return;
+  }
+
+  console.log(`Run with: ayc run ${fileName}`);
+}
+
+const invoked = basename(process.argv[1] || "").replace(/\.js$/i, "");
+const defaultCommand: Command = invoked === "ay" ? "run" : "build";
+
+if (typeof require !== "undefined" && require.main === module) {
+  runCli(defaultCommand);
+}
