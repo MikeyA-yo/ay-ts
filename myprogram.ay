@@ -151,3 +151,14 @@ writestdout("\n")
 writestdout("Hey ")
 writestdout("World\n")
 l addComp = 8 + 9 - (7/6*8)
+
+l obj = {
+    name: "Alice",
+    age: 30,
+    isStudent: false,
+    greet: f() {
+        return "Hello, " + this.name + "!"
+    }
+}
+print(obj.greet())
+print(obj.name, obj.age, obj.isStudent)

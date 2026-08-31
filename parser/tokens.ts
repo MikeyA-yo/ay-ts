@@ -101,7 +101,7 @@ const keywords = [
   "with",
   "yield",
 ];
-const allowedKeysAsVal = ["true", "false", "this", "f"/* for functions as variables */, "new"]
+const allowedKeysAsVal = ["true", "false", "this", "f"/* for functions as variables */, "new", "null"]
 export function isAllowedKey(key:string){
    return allowedKeysAsVal.includes(key)
 }
@@ -188,21 +188,28 @@ function tokenize(line: string) {
       currentType !== TokenType.SingleLineComment &&
       currentType !== TokenType.MultiLineComment
     ) {
-      qChar = line[i];
       // checks if the string was already open so we know that's a closing quote so
       // we can make sOpen false and clear currentToken, and push the entire string into the tokens array
       if (sOpen) {
-        // extra validation to make sure it's the proper end to the star
-        if (currentToken[0] === qChar) {
-          currentToken += qChar;
-          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
-          //cleanup
-          currentToken = "";
-          sOpen = false;
+        // extra validation to make sure it's the proper end to the string (same quote, not escaped)
+        if (line[i] === qChar) {
+          let slashes = 0;
+          for (let k = currentToken.length - 1; k >= 0 && currentToken[k] === "\\"; k--) {
+            slashes++;
+          }
+          if (slashes % 2 === 0) {
+            currentToken += qChar;
+            tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
+            //cleanup
+            currentToken = "";
+            sOpen = false;
+            continue;
+          }
         }
         // else we know that this is just the opening of a string, so we set the currentType
         // and we make sOpen true
       } else {
+        qChar = line[i];
         currentType = TokenType.StringLiteral;
         sOpen = true;
       }
@@ -261,56 +268,74 @@ function tokenize(line: string) {
         }
       }
     } else if (
-      /[+*/%=<>&|!?^-]/.test(line[i]) &&
+      /[+*/%=<>&|!?^~-]/.test(line[i]) &&
       !sOpen &&
       currentType !== TokenType.SingleLineComment &&
       currentType !== TokenType.MultiLineComment
     ) {
-      currentType = TokenType.Operator;
-      if (currentToken.length > 0 && /[+*/%=<>&|!?-]/.test(currentToken)) {
-        switch (currentToken.length) {
-          case 1:
-            if (currentToken === "/" && line[i] === "/") {
-              // This is a single line comment //
-              currentType = TokenType.SingleLineComment;
-              currentToken += line[i];
-            } else if (currentToken !== "^") {
-              if (currentToken === line[i]) {
-                currentToken += line[i];
-              } else if (line[i] === "=") {
-                currentToken += line[i];
-              } else {
-                tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
-                currentToken = line[i];
-              }
-            } else {
-              tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
-              currentToken = line[i];
-            }
-            break;
-          case 2:
-            if (
-              (currentToken === ">>" || currentToken === "<<") &&
-              (line[i] === ">" || line[i] === "<")
-            ) {
-              currentToken += line[i];
-            }
-            break;
-          default:
-            currentType = TokenType.Unknown;
-            currentToken += line[i];
-        }
-      } else {
-        currentToken = line[i];
+      // Single-line comments: //
+      if (line[i] === "/" && nextChar === "/") {
+        currentType = TokenType.SingleLineComment;
+        currentToken = "//";
+        i++;
+        continue;
       }
-      if (line.length - 1 >= i + 1) {
-        if (
-          !/[+*/%=<>&|!?-]/.test(line[i + 1]) &&
-          currentType !== TokenType.SingleLineComment 
-        ) {
-          tokens.push({ type: currentType, value: currentToken, line: 1, column: 1 });
-          currentToken = "";
-        }
+      // Longest-match operators so === / !== / &&= / ~= are not truncated
+      const rest = line.slice(i);
+      const opList = [
+        ">>>=",
+        "===",
+        "!==",
+        "<<=",
+        ">>=",
+        "&&=",
+        "||=",
+        "**=",
+        ">>>",
+        "<<",
+        ">>",
+        "==",
+        "!=",
+        "<=",
+        ">=",
+        "&&",
+        "||",
+        "??",
+        "**",
+        "++",
+        "--",
+        "+=",
+        "-=",
+        "*=",
+        "/=",
+        "%=",
+        "^=",
+        "+",
+        "-",
+        "*",
+        "/",
+        "%",
+        "=",
+        "<",
+        ">",
+        "!",
+        "&",
+        "|",
+        "^",
+        "~",
+        "?",
+      ];
+      const matched = opList.find((op) => rest.startsWith(op));
+      if (matched) {
+        tokens.push({
+          type: TokenType.Operator,
+          value: matched,
+          line: 1,
+          column: 1,
+        });
+        i += matched.length - 1;
+        currentToken = "";
+        currentType = TokenType.Operator;
       }
       // hmm: /^-?\d+(_?\d+)*(?:\.\d+)?$/
     } else if (
@@ -417,7 +442,7 @@ export class TokenGen {
   currentTokenNo: number;
   constructor(file: string) {
     this.tokenizeLine = tokenize;
-    this.lines = file.includes("\r\n") ? file.split("\r\n") : file.split("\n");
+    this.lines = file.split(/\r\n|\r|\n/);
     this.tokens = this.tokenizeWithLineNumbers(file);
     this.currentLine = 0;
     this.currentTokenNo = 0;
@@ -456,24 +481,11 @@ export class TokenGen {
    * @returns the token peeked, if no steps is provided returns the next token
    */
   peek(steps?: number): Token {
-    if(steps && (steps + 1 + this.currentTokenNo) < this.tokens.length){
-      let pkNo = steps + 1 + this.currentTokenNo
-      if(this.tokens[pkNo]){
-       return this.tokens[pkNo]
-      }else{
-        return this.getCurrentToken()
-      }
-    }else{
-      let pkNo = this.currentTokenNo + 1
-      if(this.tokens[pkNo]){
-       
-       return this.tokens[pkNo]
-      }else{
-        return this.getCurrentToken()
-      }
-      
+    const pkNo = this.currentTokenNo + (steps ?? 1);
+    if (this.tokens[pkNo]) {
+      return this.tokens[pkNo];
     }
-    
+    return this.getCurrentToken();
   }
   /**
    * Like next(), but optionally takes a number (steps) to move through the next token
@@ -548,13 +560,10 @@ export class TokenGen {
    * @returns An array of all the tokens in the current line
    */
   getFullLineToken() {
-    let flToken:Token[] = [];
-    for (let i = this.currentTokenNo; this.tokens[i].type != TokenType.NewLine; i--){
-      flToken.push(this.tokens[i])
-    }
-    flToken.reverse()
-    flToken.push(...this.getTokenLeftLine())
-    return flToken;
+    const line = this.getCurrentLineNumber();
+    return this.tokens.filter(
+      (t) => t.line === line && t.type !== TokenType.EOF
+    );
   }
   /**
    * Moves the token ahead to a new line

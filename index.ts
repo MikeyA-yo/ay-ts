@@ -31,16 +31,26 @@ Visit: https://github.com/MikeyA-yo/ay-ts
 `;
 if (!fileName) {
   console.error(welcome);
-  console.error("⚠️  No filename provided");
+  console.error("No filename provided");
+  process.exit(1);
+}
+
+const fileNameParts = fileName.split(".");
+if (fileNameParts[fileNameParts.length - 1] !== "ay") {
+  console.error(welcome);
+  console.error("Invalid file extension. Please use .ay files only.");
   process.exit(1);
 }
 
 const filePath = join(process.cwd(), fileName);
-const fileText = readFileSync(filePath, "utf-8");
-const fileNameParts = fileName.split(".");
-if (fileNameParts[fileNameParts.length - 1] !== "ay") {
+let fileText: string;
+try {
+  fileText = readFileSync(filePath, "utf-8");
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
   console.error(welcome);
-  console.error("⚠️  Invalid file extension. Please use .ay files only.");
+  console.error(`Could not read file '${fileName}'`);
+  console.error(message);
   process.exit(1);
 }
 const arrF = readFileSync(join(__dirname, "..", "functions", "arr.js"), "utf-8");
@@ -81,13 +91,13 @@ ${printF}
 ${fsF}
 ${dateF}
 ${timeF}
-${compiled}
 ${httpF}
+${compiled}
 `;
 const baseName = fileNameParts.slice(0, -1).join(".");
 const outputFileName = baseName.replace(/^.*[\\/]/, "") + ".js";
-console.log(`✅ Compiled ${fileName} to ${outputFileName}`);
-console.log(`🚀 Run with: node ${outputFileName}`);
+console.log(`Compiled ${fileName} to ${outputFileName}`);
+console.log(`Run with: node ${outputFileName}`);
 writeFileSync(outputFileName, output);
 // console.log(`Running ${outputFileName}...`);
 // eval(output);

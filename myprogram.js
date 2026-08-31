@@ -92,8 +92,15 @@ function includes(arr, value) {
     }
     return arr.includes(value);
 }
-function rand(min = 0, max = 0) {
-  return Math.random() * (max - min + 1) + min
+function rand(min, max) {
+  if (min === undefined && max === undefined) {
+    return Math.random();
+  }
+  if (max === undefined) {
+    max = min;
+    min = 0;
+  }
+  return Math.random() * (max - min) + min;
 }
 
 function randInt(min = 0, max = 0) {
@@ -253,8 +260,11 @@ function split(str, delimiter) {
   return str.split(delimiter);
 }
 
-function reverse(str) {
-  return str.split("").reverse().join("");
+function reverse(val) {
+  if (Array.isArray(val)) {
+    return val.reverse();
+  }
+  return String(val).split("").reverse().join("");
 }
 
 function join(arr, delimiter) {
@@ -274,15 +284,15 @@ function coolPrint(msg) {
 }
 
 function fancyLog(msg) {
-  console.log("✨ FANCY LOG:", msg);
+  console.log("FANCY LOG:", msg);
 }
 
 function stylishWarn(msg) {
-  console.warn("⚠️ STYLISH WARNING:", msg);
+  console.warn("STYLISH WARNING:", msg);
 }
 
 function errorPop(msg) {
-  console.error("❌ ERROR POP:", msg);
+  console.error("ERROR POP:", msg);
 }
 
 function print(...msg) {
@@ -441,105 +451,6 @@ function stopTimeout(timeoutId) {
 function stopInterval(intervalId) {
   clearInterval(intervalId);
 }
-let a = "my program variables are nicely scoped";
-let b = "hello world";
-let c = 6 + 3;
-let d = round(rand() * 12);
-let trueVar = true;
-let falseVar = false;
-let arr = [1, 3, 5, 7];
-function add(a, b) {
-let c = a + b;
-return c;
-}
-function greet(name) {
-let greeting = "Hello, " + name + "!";
-return greeting;
-}
-let userName = "Alice";
-let welcomeMessage = greet(userName);
-print(welcomeMessage)
-function factorial(n) {
-if ((n <= 1)) {
-return 1;
-}
-return n * factorial(n - 1);
-}
-function fibonacci(n) {
-if ((n <= 1)) {
-return n;
-}
-return fibonacci(n - 1) + fibonacci(n - 2);
-}
-let factResult = factorial(5);
-let fibResult = fibonacci(8);
-print(factResult)
-print(fibResult)
-function foo(a) {
-if ((a > 0)) {
-let result = add(a, a);
-return result;
-}
-}
-let i = 0;
-while (i < 5) {
-print(i)
-i++;
-}
-for (let i = 0; (i < 8); i++) {
-print(i)
-}
-let doubleResult = foo(20);
-print(doubleResult)
-function randPrint() {
-if ((d > 6)) {
-let comparison = 0.5 < d;
-print(comparison)
-print(d)
-} else {
-print(d)
-}
-}
-randPrint()
-let testingVar;
-
-
-
-
-let aliasedVariable = "This was declared using var alias!";
-print(aliasedVariable)
-function aliasedFunction(x, y) {
-let sum = x + y;
-return sum;
-}
-let aliasResult = aliasedFunction(10, 15);
-print(aliasResult)
-let counter = 0;
-while (counter < 10) {
-print(counter)
-counter++;
-if ((counter == 3)) {
-break;
-}
-}
-let numbers = [1, 2, 3, 4, 5];
-print(numbers, len(numbers))
-let complexCalc = factorial(4) + fibonacci(6);
-print(complexCalc)
-let mathResult = add(factorial(3), fibonacci(5));
-print(mathResult)
-let asks = input("WHat you gonna type ei? ");
-print(asks, len(asks))
-let numberP = numbers[randInt(0, 4)];
-print(numberP)
-while (true) {
-writestdout(0)
-break;
-}
-writestdout("\n")
-writestdout("Hey ")
-writestdout("World\n")
-let addComp = 8 + 9 - (7 / 6 * 8);
 // Functional HTTP utilities for AY language
 // All functions are pure and functional - no side effects, immutable data
 
@@ -797,3 +708,103 @@ function logPromise(promise, label, varName) {
       return { error: error.message, success: false };
     });
 }
+let a = "my program variables are nicely scoped";
+let b = "hello world";
+let c = 6 + 3;
+let d = round(rand() * 12);
+let trueVar = true;
+let falseVar = false;
+let arr = [1, 3, 5, 7];
+function add(a, b) {
+let c = a + b;
+return c;
+}
+function greet(name) {
+let greeting = "Hello, " + name + "!";
+return greeting;
+}
+let userName = "Alice";
+let welcomeMessage = greet(userName);
+print(welcomeMessage)
+function factorial(n) {
+if ((n <= 1)) {
+return 1;
+}
+return n * factorial(n - 1);
+}
+function fibonacci(n) {
+if ((n <= 1)) {
+return n;
+}
+return fibonacci(n - 1) + fibonacci(n - 2);
+}
+let factResult = factorial(5);
+let fibResult = fibonacci(8);
+print(factResult)
+print(fibResult)
+function foo(a) {
+if ((a > 0)) {
+let result = add(a, a);
+return result;
+}
+}
+let i = 0;
+while (i < 5) {
+print(i)
+i++
+}
+for (let i = 0; (i < 8); i++) {
+print(i)
+}
+let doubleResult = foo(20);
+print(doubleResult)
+function randPrint() {
+if ((d > 6)) {
+let comparison = 0.5 < d;
+print(comparison)
+print(d)
+} else {
+print(d)
+}
+}
+randPrint()
+let testingVar;
+let aliasedVariable = "This was declared using var alias!";
+print(aliasedVariable)
+function aliasedFunction(x, y) {
+let sum = x + y;
+return sum;
+}
+let aliasResult = aliasedFunction(10, 15);
+print(aliasResult)
+let counter = 0;
+while (counter < 10) {
+print(counter)
+counter++
+if ((counter == 3)) {
+break;
+}
+}
+let numbers = [1, 2, 3, 4, 5];
+print(numbers, len(numbers))
+let complexCalc = factorial(4) + fibonacci(6);
+print(complexCalc)
+let mathResult = add(factorial(3), fibonacci(5));
+print(mathResult)
+let asks = input("WHat you gonna type ei? ");
+print(asks, len(asks))
+let numberP = numbers[randInt(0, 4)];
+print(numberP)
+while (true) {
+writestdout(0)
+break;
+}
+writestdout("\n")
+writestdout("Hey ")
+writestdout("World\n")
+let addComp = 8 + 9 - (7 / 6 * 8);
+let obj = { name: "Alice", age: 30, isStudent: false, greet: function () {
+return "Hello, " + this.name + "!";
+} };
+print(obj.greet())
+print(obj.name, obj.age, obj.isStudent)
