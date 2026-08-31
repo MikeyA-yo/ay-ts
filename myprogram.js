@@ -1,4 +1,3 @@
-
 function sort(arr, compareFn) {
     if (!Array.isArray(arr)) {
         console.error('Input must be an array');

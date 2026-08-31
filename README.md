@@ -30,31 +30,33 @@ npm install -g ayscript
    ```
 
 ## Usage
-To compile and run an AY program:
+Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
 
-### Using the global installation:
-1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
-2. Compile the program:
-   ```bash
-   ayc myprogram.ay
-   ```
-3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
-4. Run the generated JavaScript file using Node.js:
-   ```bash
-   node myprogram.js
-   ```
+### Compile
+```bash
+ayc myprogram.ay
+```
+This writes `myprogram.js`. You can still run that file with `node myprogram.js`.
 
-### Using the source installation:
-1. Write your AY code in a file with the `.ay` extension (e.g., `myprogram.ay`).
-2. Compile the program:
-   ```bash
-   node dist/index.js myprogram.ay
-   ```
-3. The compiler will generate a JavaScript file (e.g., `myprogram.js`).
-4. Run the generated JavaScript file using Node.js:
-   ```bash
-   node myprogram.js
-   ```
+### Compile and run
+Like `go run`, `cargo run`, or `tsx`:
+```bash
+ayc run myprogram.ay
+ay myprogram.ay
+```
+Both compile to JavaScript and execute immediately. Extra arguments are passed through to the program:
+```bash
+ayc run myprogram.ay Alice
+ay myprogram.ay Alice
+```
+
+### Using the source installation
+```bash
+npx tsc
+node dist/index.js myprogram.ay          # compile
+node dist/index.js run myprogram.ay      # compile and run
+node dist/ay.js myprogram.ay             # compile and run
+```
 
 ## Language Features
 
