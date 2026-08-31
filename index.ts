@@ -4,12 +4,13 @@ import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { Parser } from "./parser/parser";
 import compileAST from "./parser/astcompiler";
-import packageJson from "./package.json";
 
 declare const __dirname: string;
 declare const require: { main: unknown };
 
-const VERSION = packageJson.version;
+const VERSION = JSON.parse(
+  readFileSync(join(__dirname, "..", "package.json"), "utf-8")
+).version as string;
 const AY_FancyName = `
    █████╗ ██╗   ██╗
   ██╔══██╗╚██╗ ██╔╝

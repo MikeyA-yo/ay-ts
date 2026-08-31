@@ -23,12 +23,13 @@
     "allowUnusedLabels": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
+    "*.ts",
+    "parser/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "scripts",
     "**/*.test.ts"
   ],
   "preserveShebangs": true

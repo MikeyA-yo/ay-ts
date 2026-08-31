@@ -1,27 +1,27 @@
 {
-  "dependencies": {
-    "@types/node": "^20.11.17",
-    "typescript": "^5.3.3"
-  },
   "name": "ayscript",
-  "version": "1.0.4",
-  "main": "./dist/index.js",
+  "version": "1.1.0",
+  "main": "dist/index.js",
   "files": [
     "dist/",
     "functions/",
     "README.md"
   ],
-  "devDependencies": {},
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "typescript": "^5.3.3"
+  },
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsc && node scripts/lf-bins.js",
     "prepublishOnly": "npm run build",
     "ayc": "node dist/index.js",
     "ay": "node dist/ay.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "ayc": "./dist/index.js",
-    "ay": "./dist/ay.js"
+    "ayc": "dist/index.js",
+    "ay": "dist/ay.js"
   },
   "keywords": [
     "AY",
