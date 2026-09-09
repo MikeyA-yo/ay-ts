@@ -138,7 +138,7 @@ print(complexCalc)
 l mathResult = add(factorial(3), fibonacci(5))
 print(mathResult)
 
-l asks = input("WHat you gonna type ei? ")
+l asks = input("What you gonna type ei? ")
 print(asks, len(asks))
 l numberP = numbers[randInt(0,4)]
 print(numberP)

@@ -7,6 +7,9 @@ function reverse(val) {
   if (Array.isArray(val)) {
     return val.reverse();
   }
+  if (typeof val !== "string") {
+    fail("reverse", "expected an array or string, got " + ayTypeName(val));
+  }
   return String(val).split("").reverse().join("");
 }
 

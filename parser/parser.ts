@@ -10,7 +10,8 @@ export class Parser {
   bracs: string[];
   vars: Variable[];
   errors: string[];
-  constructor(file: string) {
+  fileName: string;
+  constructor(file: string, fileName = "") {
     this.tokenizer = new TokenGen(file);
     this.nodes = [];
     this.parens = [];
@@ -19,6 +20,7 @@ export class Parser {
     this.vars = [];
     this.errors = [];
     this.defines = new Map();
+    this.fileName = fileName;
   }
 
   private skipNewlines() {
@@ -96,22 +98,12 @@ export class Parser {
   private addError(message: string) {
     const line = this.tokenizer.getCurrentLineNumber();
     const column = this.tokenizer.getCurrentColumnNumber();
-    const currentToken = this.tokenizer.getCurrentToken();
-    
-    // Get the actual source line from the original file
-    const actualSourceLine = this.tokenizer.lines[line - 1] || "(empty line)";
-    
-    // Create a pointer to show where the error is
-    const pointer = ' '.repeat(Math.max(0, column - 1)) + '^';
-    
-    const errorMsg = `
-Error at Line ${line}, Column ${column}: ${message}
-${actualSourceLine}
-${pointer}
-
-Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'})`;
-    
-    this.errors.push(errorMsg);
+    const source = this.tokenizer.lines[line - 1] ?? "";
+    const pointer = " ".repeat(Math.max(0, column - 1)) + "^";
+    const loc = this.fileName
+      ? `${this.fileName}:${line}:${column}`
+      : `line ${line}:${column}`;
+    this.errors.push(`${loc}: ${message}\n${source}\n${pointer}`);
   }
 
   // Resolve defined aliases - replace any defined keyword with its actual value
@@ -754,6 +746,102 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
       this.tokenizer.toNewLine();
     }
   }
+  parseThrow() {
+    this.consume();
+    if (
+      this.expectToken(TokenType.NewLine) ||
+      this.expectToken(TokenType.EOF) ||
+      this.expectTokenVal(";") ||
+      this.expectTokenVal("}")
+    ) {
+      this.addError(`throw needs a value`);
+      if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+        this.consume();
+      }
+      return <ASTNode>{ type: ASTNodeType.Throw };
+    }
+    const initializer = this.parseExpression();
+    if (this.expectToken(TokenType.NewLine) || this.expectTokenVal(";")) {
+      this.consume();
+    }
+    return <ASTNode>{
+      type: ASTNodeType.Throw,
+      initializer,
+    };
+  }
+  parseTry() {
+    this.consume();
+    this.skipNewlines();
+    if (!this.expectTokenVal("{")) {
+      this.addError(
+        `expected '{' after try, got '${this.tokenizer.getCurrentToken()?.value}'`
+      );
+      return null;
+    }
+    const body = this.parseBlockStmt();
+    this.skipNewlines();
+
+    let catchParam: string | undefined;
+    let catchBody: ASTNode[] | undefined;
+    let finallyBody: ASTNode[] | undefined;
+
+    if (this.expectTokenVal("catch")) {
+      this.consume();
+      this.skipNewlines();
+      if (this.expectTokenVal("(")) {
+        this.consume();
+        this.skipNewlines();
+        if (this.expectToken(TokenType.Identifier)) {
+          catchParam = this.consume().value;
+        } else {
+          this.addError(
+            `expected a name in catch (...), got '${this.tokenizer.getCurrentToken()?.value}'`
+          );
+        }
+        this.skipNewlines();
+        if (this.expectTokenVal(")")) {
+          this.consume();
+        } else {
+          this.addError(`expected ')' after catch parameter`);
+        }
+        this.skipNewlines();
+      }
+      if (!this.expectTokenVal("{")) {
+        this.addError(
+          `expected '{' for catch body, got '${this.tokenizer.getCurrentToken()?.value}'`
+        );
+        catchBody = [];
+      } else {
+        catchBody = this.parseBlockStmt();
+      }
+      this.skipNewlines();
+    }
+
+    if (this.expectTokenVal("finally")) {
+      this.consume();
+      this.skipNewlines();
+      if (!this.expectTokenVal("{")) {
+        this.addError(
+          `expected '{' for finally body, got '${this.tokenizer.getCurrentToken()?.value}'`
+        );
+        finallyBody = [];
+      } else {
+        finallyBody = this.parseBlockStmt();
+      }
+    }
+
+    if (catchBody === undefined && finallyBody === undefined) {
+      this.addError(`try needs a catch or finally block`);
+    }
+
+    return <ASTNode><unknown>{
+      type: ASTNodeType.Try,
+      body,
+      catchParam,
+      catchBody,
+      finallyBody,
+    };
+  }
   parseReturn() {
     this.consume(); // consume 'return'
     if (
@@ -1066,6 +1154,12 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
         case "for":
           node = this.parseForLoop()  
           break
+        case "try":
+          node = this.parseTry();
+          break;
+        case "throw":
+          node = this.parseThrow();
+          break;
         case "imp@":
         case "exp@":
           this.addError(
@@ -1127,110 +1221,9 @@ Current token: "${currentToken?.value || 'EOF'}" (${currentToken?.type || 'EOF'}
     return node;
   }
   checkAndParse() {
-    let baseToken = this.tokenizer.getCurrentToken();
-    
-    // First check if this is a keyword, then resolve any defines
-    const resolvedValue = this.resolveDefine(baseToken.value);
-    
-    // Check if the resolved value is a keyword, even if the original wasn't
-    const isResolvedKeyword = baseToken.type === TokenType.Keyword || 
-                             (baseToken.type === TokenType.Identifier && this.defines.has(baseToken.value));
-    
-    if (isResolvedKeyword) {
-      switch (resolvedValue) {
-        case tokens.l:
-          let nodeV = this.parseVariable();
-          nodeV && this.nodes.push(nodeV);
-          break;
-        case "def":
-          let nodeD = this.parseDefine();
-          nodeD && this.nodes.push(nodeD);
-          break;
-        case "return":
-          let nodeR = this.parseReturn();
-          nodeR && this.nodes.push(nodeR);
-          break;
-        case "break":
-        case "continue":
-          let nodeBC = this.parseBreakNCont();
-          nodeBC && this.nodes.push(nodeBC);
-          break;
-        case "f":
-          let nodeF = this.parseFunc();
-          nodeF && this.nodes.push(nodeF);
-          break;
-        case "if":
-          let nodeIf = this.parseIfElse();
-          nodeIf && this.nodes.push(nodeIf);
-          break;
-        case "while":
-          let nodeW = this.parseWhileLoop();
-          nodeW && this.nodes.push(nodeW);
-          break;
-        case "for":
-          let nodeFo = this.parseForLoop();
-          nodeFo && this.nodes.push(nodeFo);
-          break;
-        case "imp@":
-        case "exp@":
-          this.addError(
-            `'${resolvedValue}' is reserved for module import/export and is not implemented yet`
-          );
-          this.consume();
-          this.tokenizer.toNewLine();
-          break;
-        case "true":
-        case "false":
-        case "null":
-        case "this":
-        case "new":
-          let nodeKw = this.parseExpression();
-          nodeKw && this.nodes.push(nodeKw);
-          break;
-        default:
-          this.addError(
-            `Unexpected keyword '${resolvedValue}' - Cannot start a statement with this keyword`
-          );
-          this.consume();
-      }
-    } else {
-      switch (baseToken.type) {
-      case TokenType.Punctuation:
-        if (baseToken.value === ";") {
-          this.tokenizer.next();
-        } else {
-          this.addError(`Unexpected punctuation: '${baseToken.value}' - Cannot start a statement with this punctuation`);
-          this.tokenizer.next();
-        }
-        break;
-      case TokenType.NewLine:
-        this.tokenizer.next();
-        break;
-      case TokenType.Identifier:
-      case TokenType.Literal:
-      case TokenType.StringLiteral:
-        let nodeE = this.parseExpression();
-        nodeE && this.nodes.push(nodeE);
-        break;
-      case TokenType.Operator:
-        if (
-          this.expectTokenVal(tokens.not) ||
-          this.expectTokenVal(tokens.sub) ||
-          this.expectTokenVal("--") ||
-          this.expectTokenVal("++")
-        ) {
-          let nodeO = this.parseExpression();
-          nodeO && this.nodes.push(nodeO);
-        } else {
-          this.addError(`Unexpected operator: '${baseToken.value}' - Cannot start a statement with this operator (expected prefix operators like !, -, ++, --)`);
-          this.tokenizer.next();
-        }
-        break;
-      default:
-        this.addError(`Unexpected statement start: '${baseToken.value}' - Expected variable declaration (l), function (f), if statement, loop, or expression`);
-        this.tokenizer.next();
-      //Syntax Error Likely
-      }
+    const node = this.checkParseReturn();
+    if (node) {
+      this.nodes.push(node);
     }
   }
   start() {

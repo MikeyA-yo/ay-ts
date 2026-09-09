@@ -54,6 +54,13 @@ export default function compileAST(ast:ASTNode[]) {
         return `[${(node.elements||[]).map(compileNode).join(", ")}]`;
       case ASTNodeType.ObjectLiteral:
         return compileObject(node);
+      case ASTNodeType.Throw:
+        if (node.initializer !== undefined && node.initializer !== null) {
+          return `throw ${compileNode(node.initializer)};`;
+        }
+        return "throw undefined;";
+      case ASTNodeType.Try:
+        return compileTry(node);
       default:
         return compileFallback(node);
     }
@@ -172,6 +179,23 @@ export default function compileAST(ast:ASTNode[]) {
       return compiled;
     }
     return compiled ? `(${compiled})` : "";
+  }
+
+  function compileBlock(body) {
+    const nodes = Array.isArray(body) ? body : body ? [body] : [];
+    return nodes.map(compileNode).join("\n");
+  }
+
+  function compileTry(node) {
+    let code = `try {\n${compileBlock(node.body)}\n}`;
+    if (node.catchBody !== undefined) {
+      const param = node.catchParam ? ` (${node.catchParam})` : "";
+      code += ` catch${param} {\n${compileBlock(node.catchBody)}\n}`;
+    }
+    if (node.finallyBody !== undefined) {
+      code += ` finally {\n${compileBlock(node.finallyBody)}\n}`;
+    }
+    return code;
   }
 
   function compileLoop(node) {

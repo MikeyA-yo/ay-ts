@@ -1,93 +1,60 @@
 function sort(arr, compareFn) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+    expectArray("sort", arr);
     if (!compareFn) {
         return arr.sort();
-    } else {
-        return arr.sort(compareFn);
     }
+    return arr.sort(compareFn);
 }
 
 function reverse(arr) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+    expectArray("reverse", arr);
     return arr.reverse();
 }
 
 function filter(arr, callback) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+    expectArray("filter", arr);
     return arr.filter(callback);
 }
 
 function map(arr, callback) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+    expectArray("map", arr);
     return arr.map(callback);
 }
 
 function slice(arr, start, end) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+    expectArray("slice", arr);
     return arr.slice(start, end);
 }
 
 function splice(arr, start, deleteCount, ...items) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
-    arr.splice(start, deleteCount,...items);
+    expectArray("splice", arr);
+    arr.splice(start, deleteCount, ...items);
     return arr;
 }
 
-function push(arr,...items) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+function push(arr, ...items) {
+    expectArray("push", arr);
     arr.push(...items);
     return arr;
 }
 
 function pop(arr) {
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array but got,', typeof arr, 'instead for this function');
-        process.exit(1)     
-    }
+    expectArray("pop", arr);
     arr.pop();
     return arr;
 }
 
 function len(arr) {
-    if (!Array.isArray(arr) && typeof arr !== "string") {
-        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
-        process.exit(1)     
-    }
-    return arr.length;  
+    expectArrayOrString("len", arr);
+    return arr.length;
 }
 
-function newArr(arr, size, fillValue = null){
-    if (!Array.isArray(arr)) {
-        console.error('Input must be an array');
-        process.exit(1)
-    }
+function newArr(arr, size, fillValue = null) {
+    expectArray("newArr", arr);
     return Array.from({ length: size }, (_, i) => arr[i] || fillValue);
 }
+
 function includes(arr, value) {
-    if (!Array.isArray(arr) && typeof arr !== "string") {
-        console.error('Input must be an array or string but got,', typeof arr, 'instead for this function');
-        process.exit(1)
-    }
+    expectArrayOrString("includes", arr);
     return arr.includes(value);
 }

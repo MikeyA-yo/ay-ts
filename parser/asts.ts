@@ -21,7 +21,9 @@ export enum ASTNodeType {
   MemberExpression,
   NewExpression,
   ArrayLiteral,
-  ObjectLiteral
+  ObjectLiteral,
+  Try,
+  Throw
 }
 type right = ASTNode | string
 type left = ASTNode | string
@@ -94,6 +96,9 @@ export interface ASTNode {
   postop?:string;
   infixop?:string;
   upgrade?:ASTNode;
+  catchParam?: string;
+  catchBody?: ASTNode[];
+  finallyBody?: ASTNode[];
 }
 export interface ObjectProperty {
   key: string;

@@ -48,17 +48,17 @@ To compile and run an AY program:
 
 1. **Write your AY code** in a file with the `.ay` extension (e.g., `myprogram.ay`).
 
-2. **Compile the program:**
+2. **Compile and run** (like `go run` / `tsx`):
+
+   ```bash
+   ay myprogram.ay
+   ayc run myprogram.ay
+   ```
+
+3. **Or compile only:**
 
    ```bash
    ayc myprogram.ay
-   ```
-
-3. **The compiler will generate** a JavaScript file (e.g., `myprogram.js`).
-
-4. **Run the generated JavaScript file** using Node.js:
-
-   ```bash
    node myprogram.js
    ```
 
@@ -100,6 +100,73 @@ f add(a, b) {
     l c = a + b;
     return c;
 }
+```
+
+Anonymous functions work anywhere an expression is expected:
+
+```ay
+l double = f(n) {
+    return n * 2
+}
+```
+
+### Objects
+
+Object literals support fields, shorthand, and method shorthand. `this` is the object the method was called on:
+
+```ay
+l user = {
+    name: "Ada",
+    age: 36,
+    greet() {
+        return "Hi, I'm " + this.name
+    }
+}
+
+print(user.name)
+print(user.greet())
+```
+
+### Errors
+
+`throw` raises an error. `try` / `catch` / `finally` recover from it. Built-in functions throw instead of killing the process, so a server can keep running:
+
+```ay
+try {
+    l n = len(123)
+} catch (err) {
+    print(err.message)
+} finally {
+    print("always runs")
+}
+
+throw error("something went wrong")
+```
+
+On a server, uncaught handler errors become `500` and are logged. Add your own handler with `app.error`:
+
+```ay
+app.error(f(err, req, res) {
+    res.status(err.status || 500).json({ error: err.message })
+})
+```
+
+### Named types (toward classes)
+
+Class syntax is not locked in yet. Until then, `type()` turns an object of fields and methods into something you can `new`. `init` (or `new`) is the constructor:
+
+```ay
+l Cat = type({
+    init(name) {
+        this.name = name
+    },
+    speak() {
+        return this.name + " meows"
+    }
+})
+
+l mochi = new Cat("Mochi")
+print(mochi.speak())
 ```
 
 ### Aliases with `def` Keyword
@@ -230,12 +297,79 @@ includes(arr, value), indexOf(arr, value)
 readFile(path), writeFile(path, content), appendFile(path, content)
 ```
 
-#### HTTP Functions
+#### HTTP Client
 
 ```ay
-httpGet(url), httpPost(url, data)
+httpGet(url), httpPost(url, data), httpPut(url, data), httpPatch(url, data), httpDelete(url)
+httpRequest({ url, method, headers, body, parse })
 awaitPromise(promise, onSuccess, onError)
 ```
+
+Pass an options object when you need headers or a parse mode:
+
+```ay
+httpGet("https://api.github.com/users/octocat", {
+    headers: { "User-Agent": "ayscript" },
+    parse: "json"
+})
+```
+
+Or use the `http` object: `http.get`, `http.post`, `http.server`.
+
+#### HTTP Server
+
+`createServer()` returns an object with methods. Handlers receive `req` and `res` objects. Returning a value from a handler sends it (`string` as text, object as JSON).
+
+```ay
+l app = createServer()
+
+app.use(f(req, res) {
+    print(req.method, req.path)
+})
+
+app.get("/", f(req, res) {
+    return { message: "hello from AY" }
+})
+
+app.get("/users/:id", f(req, res) {
+    res.json({ id: req.params.id })
+})
+
+app.post("/echo", f(req, res) {
+    res.status(201).json(req.body)
+})
+
+app.listen(3000)
+```
+
+Routes can also be declared as objects at creation:
+
+```ay
+l app = createServer({
+    cors: true,
+    get: {
+        "/": f(req, res) {
+            return { ok: true }
+        },
+        "/about": f(req, res) {
+            res.html("<h1>About</h1>")
+        }
+    },
+    post: {
+        "/echo": f(req, res) {
+            res.json(req.body)
+        }
+    }
+})
+
+app.listen(3000)
+```
+
+**Server methods:** `get`, `post`, `put`, `patch`, `del`, `all`, `use`, `static`, `listen`, `close`
+
+**Request:** `method`, `path`, `url`, `query`, `params`, `headers`, `body`
+
+**Response:** `status(code)`, `header(name, value)`, `json(data)`, `send(data)`, `html(data)`, `text(data)`, `redirect(url)`, `end()`
 
 #### Date/Time Functions
 
@@ -349,6 +483,13 @@ awaitPromise(promise, fn(data) {
 }, fn(error) {
     print("Error: " + error)
 })
+
+// HTTP server
+var app = createServer()
+app.get("/", fn(req, res) {
+    return { hello: "AY" }
+})
+app.listen(3000)
 ```
 
 ## Extending the Language

@@ -81,6 +81,7 @@ const keywords = [
   "false",
   "true",
   // JavaScript keywords (non-function/variable declaration)
+  "catch",
   "class",
   "const",
   "debugger",

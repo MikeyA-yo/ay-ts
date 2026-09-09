@@ -70,6 +70,7 @@ function die(message: string, showUsage = false): never {
 function loadStdlib() {
   const dir = join(__dirname, "..", "functions");
   return [
+    readFileSync(join(dir, "error.js"), "utf-8"),
     readFileSync(join(dir, "arr.js"), "utf-8"),
     readFileSync(join(dir, "mth.js"), "utf-8"),
     readFileSync(join(dir, "string.js"), "utf-8"),
@@ -77,6 +78,7 @@ function loadStdlib() {
     readFileSync(join(dir, "fs.js"), "utf-8"),
     readFileSync(join(dir, "date.js"), "utf-8"),
     readFileSync(join(dir, "timer.js"), "utf-8"),
+    readFileSync(join(dir, "obj.js"), "utf-8"),
     readFileSync(join(dir, "http.js"), "utf-8"),
   ].join("\n");
 }
@@ -96,13 +98,14 @@ function compileFile(fileName: string) {
     die(`Could not read file '${fileName}'\n${message}`, true);
   }
 
-  const parser = new Parser(fileText);
+  const parser = new Parser(fileText, fileName);
   parser.start();
   if (parser.errors.length > 0) {
-    console.error(`${AY_FancyName} Error encountered\nError compiling ${fileName}\n`);
-    console.error("Errors:");
+    const n = parser.errors.length;
+    console.error(`ayc: ${fileName}: ${n} error${n === 1 ? "" : "s"}\n`);
     parser.errors.forEach((error) => {
       console.error(error);
+      console.error("");
     });
     process.exit(1);
   }
